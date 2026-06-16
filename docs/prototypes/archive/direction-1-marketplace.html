@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Hub Prototype 1 - Marketplace Compass</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --ink: #102033;
+      --muted: #5e6c7c;
+      --line: #dce4ee;
+      --blue: #2563eb;
+      --green: #0f9f6e;
+      --amber: #b7791f;
+      --red: #c2413a;
+      --navy: #14213d;
+      --mint: #e6f8f1;
+      --sky: #e8f1ff;
+      --warning: #fff6dd;
+      --danger: #fff0ef;
+      --shadow: 0 18px 50px rgba(16, 32, 51, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .brand-mark svg,
+    .icon svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav button,
+    .state-tabs button,
+    .mode-tabs button {
+      height: 36px;
+      padding: 0 13px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .nav button.is-active,
+    .state-tabs button.is-active,
+    .mode-tabs button.is-active {
+      color: var(--ink);
+      background: var(--surface);
+      border-color: var(--line);
+      box-shadow: 0 8px 26px rgba(16, 32, 51, 0.06);
+    }
+
+    .primary-button,
+    .secondary-button,
+    .ghost-button,
+    .danger-button {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .primary-button {
+      color: #fff;
+      background: var(--blue);
+    }
+
+    .secondary-button {
+      color: var(--navy);
+      background: #edf3ff;
+      border: 1px solid #c8d9ff;
+    }
+
+    .ghost-button {
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .danger-button {
+      color: var(--red);
+      background: var(--danger);
+      border: 1px solid #ffd3d0;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 40px;
+    }
+
+    .prototype-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .controls-copy {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      max-width: 760px;
+      font-size: 42px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: 24px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 6px;
+      font-size: 17px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 710px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .toolbar {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .state-tabs,
+    .mode-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) 390px;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .search-card {
+      background: #f9fbfe;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 46px;
+      padding: 0 12px;
+      border: 1px solid #cfd9e6;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .search-box input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+    }
+
+    .hero-actions,
+    .card-actions,
+    .detail-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.1;
+      color: var(--navy);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section {
+      margin-top: 22px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .section-head p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .skill-card,
+    .collection-row,
+    .detail-main,
+    .side-panel,
+    .state-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .skill-card {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      min-height: 230px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .badge-row,
+    .tag-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge,
+    .tag {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge.featured {
+      color: #075985;
+      background: #e0f2fe;
+    }
+
+    .badge.verified {
+      color: #05603a;
+      background: var(--mint);
+    }
+
+    .badge.pending {
+      color: #8a5200;
+      background: var(--warning);
+    }
+
+    .tag {
+      color: #445367;
+      background: #eef2f7;
+      font-weight: 700;
+    }
+
+    .skill-desc {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .meta-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .meta-line span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .catalog-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .filter-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      align-self: start;
+      position: sticky;
+      top: 92px;
+    }
+
+    .filter-group + .filter-group {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .filter-group label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 32px;
+      color: var(--muted);
+    }
+
+    .filter-group input {
+      accent-color: var(--blue);
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 16px;
+    }
+
+    .detail-main {
+      padding: 24px;
+    }
+
+    .side-panel {
+      padding: 18px;
+      align-self: start;
+    }
+
+    .install-box {
+      margin: 18px 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #c8d9ff;
+      border-radius: 8px;
+      background: #f4f8ff;
+    }
+
+    code {
+      color: #14213d;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .doc-preview {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fbfdff;
+    }
+
+    .doc-preview h3 {
+      padding: 13px 15px;
+      margin: 0;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .doc-preview ul {
+      margin: 0;
+      padding: 15px 20px 18px 34px;
+      color: var(--muted);
+    }
+
+    .state-panel {
+      min-height: 410px;
+      padding: 28px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .state-card {
+      max-width: 520px;
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+
+    .state-icon {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--sky);
+      color: var(--blue);
+    }
+
+    .state-icon.danger {
+      background: var(--danger);
+      color: var(--red);
+    }
+
+    .state-icon.locked {
+      background: var(--warning);
+      color: var(--amber);
+    }
+
+    .fit-note {
+      margin: 28px 0 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: var(--muted);
+    }
+
+    .fit-note strong {
+      color: var(--ink);
+    }
+
+    @media (max-width: 920px) {
+      .topbar-inner,
+      .prototype-controls,
+      .hero,
+      .catalog-layout,
+      .detail-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        padding: 14px 0;
+        flex-wrap: wrap;
+      }
+
+      .topbar-inner > .primary-button {
+        width: 100%;
+      }
+
+      .nav {
+        width: 100%;
+      }
+
+      .grid,
+      .metric-row {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-panel {
+        position: static;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#">
+          <span class="brand-mark"><i data-lucide="sparkles"></i></span>
+          <span>Skill Hub</span>
+        </a>
+        <nav class="nav" aria-label="Prototype page switcher">
+          <button data-page="home" class="is-active"><i data-lucide="home"></i>Home</button>
+          <button data-page="listing"><i data-lucide="list-filter"></i>Skills</button>
+          <button data-page="detail"><i data-lucide="file-code-2"></i>Detail</button>
+        </nav>
+        <button class="primary-button"><i data-lucide="plus"></i>Submit skill</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="prototype-controls" aria-label="State controls">
+        <div class="controls-copy">
+          <p class="eyebrow">Direction 1</p>
+          <h1>Marketplace Compass</h1>
+          <p class="lead">A search-first developer marketplace with trust badges, fast install actions, and clear public catalog boundaries.</p>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <span class="toolbar-label">Demo state</span>
+            <div class="mode-tabs" aria-label="Demo state switcher">
+              <button data-mode="loaded" class="is-active">Loaded</button>
+              <button data-mode="empty">Empty</button>
+              <button data-mode="error">Error</button>
+              <button data-mode="restricted">Restricted</button>
+            </div>
+          </div>
+          <div class="toolbar-row">
+            <span class="toolbar-label">Current page</span>
+            <span id="statusText" class="toolbar-label">Catalog data loaded</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="view" aria-live="polite"></div>
+
+      <section class="fit-note">
+        <strong>Design fit:</strong> Suitable for a public MVP that needs fast discovery, clear install confidence, and simple visitor-to-detail conversion. Not suitable when admin review work is the dominant daily workflow, or when SEO/editorial content is more important than in-product comparison.
+      </section>
+    </main>
+  </div>
+
+  <!--
+    Required prototype coverage:
+    1. Core pages: Home, listing, and detail are available through the top navigation.
+    2. Key state: Loaded mode shows populated mock catalog data and interactive copy/filter controls.
+    3. Empty state: Empty mode shows no featured skills, no search results, or no selected skill.
+    4. Error state: Error mode shows load and copy failure patterns.
+    5. Permission-restricted state: Restricted mode shows logged-out/read-only behavior and locked creator/admin actions.
+    6. Direction explanation: The visible Design fit section states suitable and unsuitable scenarios.
+  -->
+
+  <script>
+    const skills = [
+      {
+        name: "Release Notes Builder",
+        author: "Ada Chen",
+        category: "Documentation",
+        tags: ["docs", "git", "writing"],
+        badge: "Featured",
+        badgeClass: "featured",
+        trust: "Verified source",
+        installs: "18.4k",
+        updated: "2 days ago",
+        command: "codex skill install ada/release-notes-builder",
+        description: "Turns merged pull requests into crisp release notes with grouped changes and risk callouts.",
+        notes: ["Reads local git history and PR metadata.", "Keeps generated notes editable before publishing.", "Works best for weekly release trains."]
+      },
+      {
+        name: "API Contract Auditor",
+        author: "Nora Patel",
+        category: "Testing",
+        tags: ["api", "openapi", "qa"],
+        badge: "Audited",
+        badgeClass: "verified",
+        trust: "Security reviewed",
+        installs: "9.7k",
+        updated: "5 days ago",
+        command: "codex skill install nora/api-contract-auditor",
+        description: "Compares OpenAPI specs against route handlers and catches missing examples before review.",
+        notes: ["Highlights route drift.", "Exports a markdown audit summary.", "Includes duplicate-click protection for repeated checks."]
+      },
+      {
+        name: "Inbox Triage Copilot",
+        author: "Miles Yu",
+        category: "Productivity",
+        tags: ["email", "priority", "ops"],
+        badge: "Featured",
+        badgeClass: "featured",
+        trust: "Maintained weekly",
+        installs: "12.1k",
+        updated: "Today",
+        command: "codex skill install miles/inbox-triage-copilot",
+        description: "Ranks incoming threads by urgency, waiting state, and reply owner using mailbox metadata.",
+        notes: ["Groups messages into reply buckets.", "Avoids sending mail without approval.", "Useful for daily executive triage."]
+      }
+    ];
+
+    const state = {
+      page: "home",
+      mode: "loaded"
+    };
+
+    const statusText = {
+      loaded: "Catalog data loaded",
+      empty: "No matching data",
+      error: "Network request failed",
+      restricted: "Logged-out read-only view"
+    };
+
+    const view = document.getElementById("view");
+    const statusNode = document.getElementById("statusText");
+
+    function icon(name) {
+      return `<i data-lucide="${name}"></i>`;
+    }
+
+    function setPage(nextPage) {
+      state.page = nextPage;
+      document.querySelectorAll("[data-page]").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.page === nextPage);
+      });
+      render();
+    }
+
+    function setMode(nextMode) {
+      state.mode = nextMode;
+      document.querySelectorAll("[data-mode]").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.mode === nextMode);
+      });
+      render();
+    }
+
+    function skillCard(skill, locked = false) {
+      return `
+        <article class="skill-card">
+          <div class="card-top">
+            <div>
+              <span class="badge ${skill.badgeClass}">${skill.badge}</span>
+              <h3>${skill.name}</h3>
+            </div>
+            <button class="ghost-button" ${locked ? "disabled" : ""} title="${locked ? "Sign in required" : "Open detail"}">${icon("arrow-up-right")}</button>
+          </div>
+          <p class="skill-desc">${skill.description}</p>
+          <div class="tag-row">${skill.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}</div>
+          <div class="meta-line">
+            <span>${icon("user-round")} ${skill.author}</span>
+            <span>${icon("download")} ${skill.installs}</span>
+            <span>${icon("refresh-cw")} ${skill.updated}</span>
+          </div>
+          <div class="card-actions">
+            <button class="primary-button" onclick="setPage('detail')" ${locked ? "disabled" : ""}>${icon("copy")}Copy install</button>
+            <button class="secondary-button" onclick="setPage('detail')">${icon("file-text")}Details</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function statePanel(kind, title, text, actionLabel, iconName) {
+      const className = kind === "error" ? "danger" : kind === "restricted" ? "locked" : "";
+      return `
+        <section class="state-panel">
+          <div class="state-card">
+            <div class="state-icon ${className}">${icon(iconName)}</div>
+            <h2>${title}</h2>
+            <p class="lead">${text}</p>
+            <div class="hero-actions">
+              <button class="primary-button" onclick="setMode('loaded')">${icon("rotate-cw")}${actionLabel}</button>
+              <button class="ghost-button" onclick="setPage('listing')">${icon("list-filter")}Open skills</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderHome() {
+      if (state.mode === "empty") {
+        return statePanel("empty", "No featured skills yet", "The catalog is ready, but no published or featured skills are available for this audience.", "Load sample catalog", "inbox");
+      }
+      if (state.mode === "error") {
+        return statePanel("error", "Catalog failed to load", "The homepage keeps a clear recovery action instead of leaving the featured and category sections blank.", "Retry loading", "wifi-off");
+      }
+      const locked = state.mode === "restricted";
+      return `
+        <section class="hero">
+          <div>
+            <p class="eyebrow">${locked ? "Public preview" : "Skill discovery"}</p>
+            <h2>Find trusted agent skills, inspect the source, and copy the install command with confidence.</h2>
+            <p class="lead">${locked ? "You are browsing as a logged-out visitor. Published skills stay visible, while submission and review controls remain locked." : "Marketplace-style discovery keeps the public path short: search, compare, open detail, copy install."}</p>
+            <div class="hero-actions">
+              <button class="primary-button" onclick="setPage('listing')">${icon("search")}Browse catalog</button>
+              <button class="secondary-button" ${locked ? "disabled title='Sign in to submit'" : ""}>${icon("plus")}Submit skill</button>
+            </div>
+          </div>
+          <aside class="search-card">
+            <div class="search-box">
+              ${icon("search")}
+              <input value="Find skills for API testing" aria-label="Search skills">
+            </div>
+            <div class="metric-row">
+              <div class="metric"><strong>128</strong><span>published</span></div>
+              <div class="metric"><strong>24</strong><span>featured</span></div>
+              <div class="metric"><strong>3</strong><span>pending</span></div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h2>Featured skills</h2>
+              <p>Public results show only published skills with trust and install signals.</p>
+            </div>
+            <button class="ghost-button" onclick="setPage('listing')">${icon("arrow-right")}View all</button>
+          </div>
+          <div class="grid">
+            ${skills.map((skill) => skillCard(skill, false)).join("")}
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h2>Curated collections</h2>
+              <p>Collections are a future-friendly pattern without making them required for v1.</p>
+            </div>
+          </div>
+          <div class="collection-row" style="padding: 16px;">
+            <div class="badge-row">
+              <span class="badge verified">${icon("shield-check")}Admin curated</span>
+              <span class="tag">Release readiness</span>
+              <span class="tag">Review quality</span>
+              <span class="tag">Team productivity</span>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderListing() {
+      if (state.mode === "empty") {
+        return statePanel("empty", "No skills match those filters", "The listing page gives users a reset path and suggested categories when search or filters return nothing.", "Reset filters", "search-x");
+      }
+      if (state.mode === "error") {
+        return statePanel("error", "Search results could not refresh", "A recoverable error state preserves the filter context and offers a retry instead of a broken list.", "Retry search", "cloud-off");
+      }
+      const locked = state.mode === "restricted";
+      return `
+        <section class="catalog-layout">
+          <aside class="filter-panel">
+            <h3>Filters</h3>
+            <div class="filter-group">
+              <label><span>Development</span><input type="checkbox" checked></label>
+              <label><span>Testing</span><input type="checkbox" checked></label>
+              <label><span>Documentation</span><input type="checkbox"></label>
+              <label><span>Productivity</span><input type="checkbox"></label>
+            </div>
+            <div class="filter-group">
+              <label><span>Featured</span><input type="checkbox" checked></label>
+              <label><span>Audited</span><input type="checkbox"></label>
+              <label><span>Recently updated</span><input type="checkbox" checked></label>
+            </div>
+            <div class="filter-group">
+              <button class="ghost-button" style="width: 100%;">${icon("x")}Clear filters</button>
+            </div>
+          </aside>
+          <section>
+            <div class="result-head">
+              <div>
+                <h2>Published skills</h2>
+                <p class="lead">${locked ? "Read-only public catalog. Draft, pending, rejected, and unpublished skills are hidden." : "128 results sorted by recommended, popularity, and freshness."}</p>
+              </div>
+              <button class="secondary-button">${icon("arrow-down-narrow-wide")}Recommended</button>
+            </div>
+            <div class="grid">
+              ${skills.map((skill) => skillCard(skill, locked)).join("")}
+            </div>
+          </section>
+        </section>
+      `;
+    }
+
+    function renderDetail() {
+      if (state.mode === "empty") {
+        return statePanel("empty", "No skill selected", "The detail route handles stale links and deleted public records without exposing private submissions.", "Open featured skill", "file-question");
+      }
+      if (state.mode === "error") {
+        return statePanel("error", "Skill detail failed to load", "The detail page shows a clear load failure and keeps navigation available for recovery.", "Retry detail", "circle-alert");
+      }
+      const locked = state.mode === "restricted";
+      const skill = skills[0];
+      return `
+        <section class="detail-layout">
+          <article class="detail-main">
+            <div class="badge-row">
+              <span class="badge featured">${icon("star")}Featured</span>
+              <span class="badge verified">${icon("shield-check")}Verified source</span>
+              <span class="tag">${skill.category}</span>
+            </div>
+            <h2>${skill.name}</h2>
+            <p class="lead">${skill.description}</p>
+            <div class="meta-line">
+              <span>${icon("user-round")} ${skill.author}</span>
+              <span>${icon("download")} ${skill.installs} installs</span>
+              <span>${icon("refresh-cw")} Updated ${skill.updated}</span>
+            </div>
+            <div class="install-box">
+              <code id="installCommand">${skill.command}</code>
+              <button class="primary-button" onclick="copyInstall()" ${state.mode === "error" ? "disabled" : ""}>${icon("copy")}<span id="copyLabel">Copy</span></button>
+            </div>
+            <div class="doc-preview">
+              <h3>Usage notes</h3>
+              <ul>
+                ${skill.notes.map((note) => `<li>${note}</li>`).join("")}
+              </ul>
+            </div>
+          </article>
+          <aside class="side-panel">
+            <h3>Governance</h3>
+            <p class="skill-desc">${locked ? "Admin actions are hidden in the public detail page. Visitors can inspect and copy only published skill content." : "Admin curation controls are available to authorized reviewers."}</p>
+            <div class="section">
+              <div class="tag-row">
+                <span class="tag">MIT license</span>
+                <span class="tag">Claude</span>
+                <span class="tag">Codex</span>
+                <span class="tag">Gemini</span>
+              </div>
+            </div>
+            <div class="section card-actions">
+              <button class="secondary-button" ${locked ? "disabled title='Admin only'" : ""}>${icon("star")}Feature</button>
+              <button class="danger-button" ${locked ? "disabled title='Admin only'" : ""}>${icon("archive")}Unpublish</button>
+            </div>
+          </aside>
+        </section>
+      `;
+    }
+
+    function copyInstall() {
+      const label = document.getElementById("copyLabel");
+      if (!label) return;
+      label.textContent = "Copied";
+      setTimeout(() => {
+        if (document.getElementById("copyLabel")) {
+          document.getElementById("copyLabel").textContent = "Copy";
+        }
+      }, 1400);
+    }
+
+    function render() {
+      statusNode.textContent = statusText[state.mode];
+      if (state.page === "home") view.innerHTML = renderHome();
+      if (state.page === "listing") view.innerHTML = renderListing();
+      if (state.page === "detail") view.innerHTML = renderDetail();
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    document.querySelectorAll("[data-page]").forEach((button) => {
+      button.addEventListener("click", () => setPage(button.dataset.page));
+    });
+
+    document.querySelectorAll("[data-mode]").forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    render();
+  </script>
+</body>
+</html>

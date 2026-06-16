@@ -1,0 +1,44 @@
+# One-command local stack: PostgreSQL + FastAPI (migrated & seeded) + Next.js (implement.md §6.3).
+#   docker compose up
+# Then open http://localhost:3000 (app) and http://localhost:8000/docs (API explorer).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: skill
+      POSTGRES_PASSWORD: skill
+      POSTGRES_DB: skillhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skill -d skillhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://skill:skill@db:5432/skillhub
+      JWT_SECRET: change-me-in-production-please-32-bytes
+      CORS_ORIGINS: http://localhost:3000
+    command: sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

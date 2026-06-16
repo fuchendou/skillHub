@@ -1,0 +1,2465 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Hub Prototype 2 - Review Command Center</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #eef2f5;
+      --surface: #ffffff;
+      --ink: #17202a;
+      --muted: #667482;
+      --line: #d8e0e7;
+      --sidebar: #18212c;
+      --sidebar-soft: #242f3e;
+      --cyan: #0e7490;
+      --lime: #3f8f3f;
+      --violet: #6d5bd0;
+      --amber: #a16207;
+      --red: #bf3f35;
+      --cyan-soft: #e6f6fa;
+      --lime-soft: #edf8ee;
+      --violet-soft: #f0edff;
+      --amber-soft: #fff5db;
+      --red-soft: #fff0ee;
+      --radius: 8px;
+      --shadow: 0 18px 48px rgba(23, 32, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    .console {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: var(--sidebar);
+      color: #f7fbff;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #d9f99d;
+      color: var(--sidebar);
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-mark svg,
+    .icon svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+    }
+
+    .sidebar-note {
+      color: #b6c4d4;
+      margin: 0;
+      font-size: 13px;
+    }
+
+    /* account / role identity block */
+    .account {
+      border: 1px solid #313e4f;
+      background: #1f2937;
+      border-radius: 10px;
+      padding: 12px;
+      display: grid;
+      gap: 11px;
+    }
+
+    .account-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--sidebar);
+      background: #9bd0df;
+      flex: none;
+    }
+
+    .avatar.member { background: #c9bdf6; }
+    .avatar.admin { background: #d9f99d; }
+
+    .account-id {
+      min-width: 0;
+    }
+
+    .account-id strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-id span {
+      color: #9fb0c2;
+      font-size: 12px;
+    }
+
+    .side-label {
+      color: #7d8 ;
+      color: #748598;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 2px 0 -6px;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 7px;
+    }
+
+    .side-nav button {
+      min-height: 42px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: #cad6e3;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .side-nav button .count {
+      margin-left: auto;
+      background: #313e4f;
+      color: #e7eef6;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      min-width: 22px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+    }
+
+    .side-nav button.is-active,
+    .side-nav button:hover {
+      color: #fff;
+      background: var(--sidebar-soft);
+    }
+
+    .side-nav button.is-active .count {
+      background: var(--cyan);
+    }
+
+    .side-foot {
+      margin-top: auto;
+      color: #8295a8;
+      font-size: 12px;
+      border-top: 1px solid #2b3848;
+      padding-top: 14px;
+    }
+
+    .workspace {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .workspace-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .workspace-top h1 {
+      margin: 0 0 7px;
+      font-size: 32px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .workspace-top p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .state-switcher {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow);
+    }
+
+    .state-switcher span {
+      align-self: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 4px;
+    }
+
+    .state-switcher button {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .state-switcher button.is-active {
+      background: var(--sidebar);
+      color: #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .queue-row,
+    .review-card,
+    .state-panel,
+    .skill-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h2 {
+      margin-bottom: 6px;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 6px;
+      font-size: 16px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric.cyan { background: var(--cyan-soft); border-color: #b9e9f3; }
+    .metric.lime { background: var(--lime-soft); border-color: #c8eccc; }
+    .metric.violet { background: var(--violet-soft); border-color: #dad3ff; }
+    .metric.amber { background: var(--amber-soft); border-color: #f3d99c; }
+
+    .queue-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .queue-row {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      box-shadow: none;
+    }
+
+    .row-main {
+      min-width: 0;
+    }
+
+    .row-main p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .badge-row,
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .badge,
+    .tag {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge svg { width: 13px; height: 13px; }
+
+    .badge.pending { color: var(--amber); background: var(--amber-soft); }
+    .badge.safe { color: var(--lime); background: var(--lime-soft); }
+    .badge.blocked { color: var(--red); background: var(--red-soft); }
+    .badge.readonly { color: var(--violet); background: var(--violet-soft); }
+    .badge.published { color: var(--cyan); background: var(--cyan-soft); }
+    .badge.featured { color: #92600a; background: #fdebc2; }
+    .badge.draft { color: #506070; background: #eef2f7; }
+    .badge.rejected { color: var(--red); background: var(--red-soft); }
+    .badge.unpublished { color: #5b6878; background: #e7ecf2; }
+
+    .tag {
+      color: #506070;
+      background: #edf2f7;
+    }
+
+    .primary,
+    .secondary,
+    .danger,
+    .ghost {
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .primary svg, .secondary svg, .danger svg, .ghost svg { width: 15px; height: 15px; }
+
+    .primary { color: #fff; background: var(--cyan); }
+    .primary:hover:not(:disabled) { background: #0b6178; }
+    .secondary { color: var(--ink); background: #edf7fb; border: 1px solid #badfed; }
+    .secondary:hover:not(:disabled) { background: #e0f1f8; }
+    .danger { color: var(--red); background: var(--red-soft); border: 1px solid #ffd2cc; }
+    .danger:hover:not(:disabled) { background: #ffe5e1; }
+    .ghost { color: var(--ink); background: #fff; border: 1px solid var(--line); }
+    .ghost:hover:not(:disabled) { background: #f4f7fa; }
+
+    .btn-small {
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .review-card {
+      padding: 18px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .review-card code,
+    .cmd-block {
+      display: block;
+      margin: 12px 0;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f5f7fa;
+      border: 1px solid var(--line);
+      color: #1e293b;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline {
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 9px;
+      align-items: start;
+      color: var(--muted);
+    }
+
+    .timeline span:first-child {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      background: var(--cyan-soft);
+    }
+
+    .timeline span:first-child svg { width: 15px; height: 15px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .field label .req { color: var(--red); }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 40px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: 2px solid #bce4f1;
+      border-color: var(--cyan);
+    }
+
+    .field input[readonly],
+    .field textarea[readonly] {
+      background: #f4f7fa;
+      color: #4b5763;
+    }
+
+    .field textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .field.invalid input,
+    .field.invalid textarea,
+    .field.invalid select {
+      border-color: var(--red);
+      background: #fff6f5;
+    }
+
+    .help {
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 700;
+      min-height: 0;
+    }
+
+    .help:empty { display: none; }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+
+    .notice {
+      border: 1px solid #cfe6ef;
+      background: #f1fafd;
+      color: #20596b;
+      border-radius: 8px;
+      padding: 12px 13px;
+      font-size: 13.5px;
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+    }
+
+    .notice svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+    .notice.warn { border-color: #f0dba6; background: #fff8e8; color: #7a5908; }
+    .notice.lock { border-color: #ddd5f6; background: #f5f2ff; color: #4b3fa0; }
+
+    /* browse / department-scoped catalog */
+    .toolbar {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .search-line {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1 1 280px;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 11px;
+      background: #fff;
+      min-height: 42px;
+    }
+
+    .search-box:focus-within { outline: 2px solid #bce4f1; border-color: var(--cyan); }
+    .search-box svg { width: 17px; height: 17px; color: var(--muted); flex: none; }
+
+    .search-box input {
+      border: 0;
+      outline: 0;
+      flex: 1;
+      min-width: 0;
+      min-height: 40px;
+      background: transparent;
+    }
+
+    .sort-select {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #fff;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .chip {
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip svg { width: 14px; height: 14px; }
+    .chip:hover { background: #f4f7fa; }
+    .chip.is-active { background: var(--sidebar); color: #fff; border-color: var(--sidebar); }
+    .chip.trust.is-active { background: var(--cyan); border-color: var(--cyan); }
+
+    .chip-sep {
+      width: 1px;
+      align-self: stretch;
+      background: var(--line);
+      margin: 2px 4px;
+    }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 13.5px;
+      flex-wrap: wrap;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .skill-card {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skill-card h3 { margin: 0; }
+    .skill-card .desc { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .card-foot {
+      margin-top: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .card-by {
+      color: var(--muted);
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .card-by svg { width: 14px; height: 14px; }
+
+    .empty-inline {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px 20px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: #fbfdfe;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      color: var(--muted);
+    }
+
+    .empty-inline .state-icon { margin: 0; }
+
+    .state-panel {
+      min-height: 460px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 28px;
+    }
+
+    .state-card {
+      max-width: 540px;
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+
+    .state-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: var(--cyan);
+      background: var(--cyan-soft);
+    }
+
+    .state-icon svg { width: 26px; height: 26px; }
+    .state-icon.error { color: var(--red); background: var(--red-soft); }
+    .state-icon.locked { color: var(--amber); background: var(--amber-soft); }
+    .state-icon.muted { color: var(--muted); background: #eef2f6; }
+
+    /* spinner */
+    .spinner {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      display: inline-block;
+      animation: spin 0.65s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* skeleton */
+    .skel {
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e9eef3 25%, #f3f6f9 37%, #e9eef3 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.3s ease infinite;
+    }
+
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+    /* toast */
+    .toast-wrap {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      display: grid;
+      gap: 10px;
+      z-index: 60;
+      max-width: 360px;
+    }
+
+    .toast {
+      background: var(--sidebar);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      box-shadow: 0 16px 40px rgba(23, 32, 42, 0.28);
+      animation: toastin 0.22s ease;
+    }
+
+    @keyframes toastin { from { transform: translateY(10px); opacity: 0; } }
+
+    .toast svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+    .toast.success { background: #1f6f3f; }
+    .toast.error { background: #a32f26; }
+    .toast.info { background: #1f3a52; }
+    .toast .t-body { font-size: 13.5px; font-weight: 600; }
+    .toast .t-close { background: transparent; color: rgba(255,255,255,0.8); padding: 0; margin-left: auto; }
+
+    /* modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 22, 30, 0.5);
+      display: grid;
+      place-items: center;
+      z-index: 70;
+      padding: 20px;
+      animation: toastin 0.18s ease;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.35);
+      width: 100%;
+      max-width: 460px;
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal h3 { margin: 0; }
+    .modal .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+    .modal textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 92px;
+      padding: 10px;
+      resize: vertical;
+    }
+    .modal textarea:focus { outline: 2px solid #bce4f1; border-color: var(--cyan); }
+
+    .fit-note {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 18px;
+      color: var(--muted);
+    }
+
+    .fit-note strong { color: var(--ink); }
+
+    /* auth screen (login / register) — full-screen gate before the app */
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px 20px;
+      background:
+        radial-gradient(1100px 520px at 50% -10%, #dfeaf2 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 26px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+      font-size: 17px;
+    }
+
+    .auth-head h2 { margin: 0 0 4px; }
+    .auth-head p { margin: 0; color: var(--muted); font-size: 14px; }
+    .auth-card form { display: grid; gap: 13px; }
+    .auth-card .primary { width: 100%; }
+
+    .auth-hint {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-hint code {
+      background: #f5f7fa;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12.5px;
+      color: #1e293b;
+    }
+
+    .auth-demo-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .auth-demo-row .ghost { flex: 1 1 auto; }
+
+    .auth-link {
+      background: transparent;
+      border: 0;
+      color: var(--cyan);
+      font-weight: 800;
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .auth-error {
+      border: 1px solid #ffd2cc;
+      background: var(--red-soft);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .auth-error svg { width: 16px; height: 16px; flex: none; }
+    .auth-error:empty { display: none; }
+
+    /* department toggle chips (admin assign control) */
+    .dept-toggle.is-on {
+      background: var(--cyan);
+      color: #fff;
+      border-color: var(--cyan);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      border: 0;
+    }
+
+    @media (max-width: 1020px) {
+      .console,
+      .layout,
+      .metric-grid,
+      .form-grid,
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar { position: static; }
+      .side-nav { grid-template-columns: 1fr; }
+      .review-card { position: static; }
+    }
+
+    @media (max-width: 680px) {
+      .workspace { padding: 16px; }
+      .workspace-top { flex-direction: column; }
+      .queue-row { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div id="authRoot"></div>
+  <div class="console" id="appRoot">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark"><i data-lucide="shield-check"></i></span>
+        <span>Skill Hub Ops</span>
+      </div>
+      <p class="sidebar-note">An internal curation workspace where every view, action, and record is gated by who is signed in and which department they belong to.</p>
+
+      <div class="account" id="account"></div>
+
+      <p class="side-label">Workspace</p>
+      <nav class="side-nav" id="sideNav" aria-label="Role-aware navigation"></nav>
+
+      <div class="side-foot" id="sideFoot"></div>
+    </aside>
+
+    <main class="workspace">
+      <section class="workspace-top">
+        <div>
+          <h1 id="pageTitle">Review Command Center</h1>
+          <p id="pageSubtitle">Operational dashboard for submission review, lifecycle management, and permission-safe curation.</p>
+        </div>
+        <div class="state-switcher" aria-label="Demo data state">
+          <span>Data state</span>
+          <button data-act="mode" data-id="loaded" class="is-active">Loaded</button>
+          <button data-act="mode" data-id="empty">Empty</button>
+          <button data-act="mode" data-id="error">Error</button>
+        </div>
+      </section>
+
+      <div id="view" aria-live="polite"></div>
+
+      <section class="fit-note">
+        <strong>Design fit:</strong> Suitable when review quality, submission safety, admin throughput, and member ownership are the main risk areas for an internal, login-gated company tool. The same console reshapes itself for members (a department-scoped catalog plus their own submissions) and admins (full curation and department assignment), while the production app must enforce the same permission and visibility boundaries server-side. Not ideal as a marketing-first public homepage, because it is access-controlled and prioritizes operations over browsing delight and SEO.
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-wrap" id="toasts" aria-live="assertive"></div>
+  <div id="modalRoot"></div>
+
+  <!--
+    Prototype coverage (internal, login-gated company tool):
+    1. Auth: the whole app is gated behind Login + Register. Logged out shows only the auth screen.
+    2. Roles: Member / Admin reconfigure navigation, visible data, and available actions (admin actions are hidden, not just disabled, for members).
+    3. Department scoping: members see only published skills available to their department (org-wide or assigned) plus their own submissions; admins see everything and can assign published skills to departments.
+    4. Core pages: department-scoped Browse (admin preview for admins), admin Dashboard + Review Queue + Departments, member My Submissions + Submit, and a shared Detail/Review surface.
+    5. Interactivity: real clipboard copy with success/failure feedback, publish / reject-with-reason / feature / unpublish / department-assign (idempotent, double-click safe), search / filter / sort, and a validated submission form.
+    6. States: Loaded, Empty, Error, plus per-action loading (busy spinners) and a recovery -> loading -> loaded retry flow.
+  -->
+
+  <script>
+    /* ----------------------------------------------------------------------
+       Data model — a single in-memory catalog with real lifecycle states.
+       status: draft | pending | published | rejected | unpublished
+    ---------------------------------------------------------------------- */
+    let nextId = 100;
+    const skills = [
+      {
+        id: "s1", name: "Schema Drift Watcher", author: "Mina Torres", ownerId: "u-mina",
+        category: "Backend", status: "pending", featured: false, risk: "Low risk",
+        command: "codex skill install mina/schema-drift-watcher",
+        source: "github.com/mina/schema-drift-watcher",
+        summary: "Compares database migrations with application models and flags mismatched fields.",
+        tags: ["backend", "database", "review"],
+        usage: "Run before each release. Reads your migrations directory and ORM models, then reports drift.",
+        updated: "2h ago", rejectionReason: "", departments: ["Engineering"]
+      },
+      {
+        id: "s2", name: "Design Token Reporter", author: "Owen Park", ownerId: "u-owen",
+        category: "Design", status: "pending", featured: false, risk: "Needs duplicate check",
+        command: "codex skill install owen/design-token-reporter",
+        source: "github.com/owen/design-token-reporter",
+        summary: "Finds token drift between CSS variables, Storybook docs, and product screenshots.",
+        tags: ["design", "tokens", "qa"],
+        usage: "Point it at your tokens file and Storybook build to get a drift report.",
+        updated: "5h ago", rejectionReason: "", departments: ["Design"]
+      },
+      {
+        id: "s3", name: "Incident Summary Writer", author: "Rae Singh", ownerId: "u-rae",
+        category: "DevOps", status: "pending", featured: false, risk: "Low risk",
+        command: "codex skill install rae/incident-summary-writer",
+        source: "github.com/rae/incident-summary-writer",
+        summary: "Creates post-incident summaries from timeline notes, owner comments, and status updates.",
+        tags: ["ops", "docs", "incident"],
+        usage: "Paste a timeline; it produces a structured retro with owners and follow-ups.",
+        updated: "1d ago", rejectionReason: "", departments: []
+      },
+      {
+        id: "s4", name: "PR Risk Summarizer", author: "Owen Park", ownerId: "u-owen",
+        category: "Review", status: "published", featured: true, risk: "Low risk",
+        command: "codex skill install owen/pr-risk-summarizer",
+        source: "github.com/owen/pr-risk-summarizer",
+        summary: "Scores pull requests by blast radius and surfaces the riskiest hunks for review first.",
+        tags: ["review", "git", "safety"],
+        usage: "Adds a risk comment to each PR ranking files by change impact.",
+        updated: "3d ago", rejectionReason: "", departments: []
+      },
+      {
+        id: "s5", name: "Test Flake Finder", author: "Mina Torres", ownerId: "u-mina",
+        category: "Testing", status: "published", featured: false, risk: "Low risk",
+        command: "codex skill install mina/test-flake-finder",
+        source: "github.com/mina/test-flake-finder",
+        summary: "Detects flaky tests from CI history and proposes quarantine or retry strategies.",
+        tags: ["testing", "ci", "reliability"],
+        usage: "Reads your CI logs and ranks tests by flake frequency.",
+        updated: "6d ago", rejectionReason: "", departments: ["Engineering"]
+      },
+      {
+        id: "s6", name: "Changelog Composer", author: "Rae Singh", ownerId: "u-rae",
+        category: "Docs", status: "published", featured: true, risk: "Low risk",
+        command: "codex skill install rae/changelog-composer",
+        source: "github.com/rae/changelog-composer",
+        summary: "Turns merged pull requests into a grouped, human-readable changelog draft.",
+        tags: ["docs", "release", "writing"],
+        usage: "Run at release time to draft notes grouped by feature, fix, and chore.",
+        updated: "8d ago", rejectionReason: "", departments: ["Design", "Docs"]
+      },
+      {
+        id: "s7", name: "Secret Scanner Lite", author: "Mina Torres", ownerId: "u-mina",
+        category: "Security", status: "rejected", featured: false, risk: "Needs source review",
+        command: "codex skill install mina/secret-scanner-lite",
+        source: "github.com/mina/secret-scanner-lite",
+        summary: "Scans staged changes for high-entropy strings and known credential patterns.",
+        tags: ["security", "git", "secrets"],
+        usage: "Hooks into pre-commit to block obvious secret leaks.",
+        updated: "4d ago", departments: ["Security"],
+        rejectionReason: "Install command pointed to an unverified mirror. Please repoint to the official source and resubmit."
+      },
+      {
+        id: "s8", name: "Latency Budget Linter", author: "Owen Park", ownerId: "u-owen",
+        category: "Performance", status: "unpublished", featured: false, risk: "Low risk",
+        command: "codex skill install owen/latency-budget-linter",
+        source: "github.com/owen/latency-budget-linter",
+        summary: "Flags endpoints that exceed their declared latency budget in load-test output.",
+        tags: ["performance", "api"],
+        usage: "Compares load-test results against per-route budgets.",
+        updated: "12d ago", rejectionReason: "", departments: ["Engineering"]
+      },
+      {
+        id: "s9", name: "Coverage Gap Mapper", author: "Mina Torres", ownerId: "u-mina",
+        category: "Testing", status: "draft", featured: false, risk: "Draft",
+        command: "codex skill install mina/coverage-gap-mapper",
+        source: "github.com/mina/coverage-gap-mapper",
+        summary: "Maps uncovered branches to the files and owners most likely to add tests.",
+        tags: ["testing", "coverage"],
+        usage: "Reads coverage reports and suggests the highest-value tests to add next.",
+        updated: "just now", rejectionReason: "", departments: []
+      }
+    ];
+
+    const CATEGORIES = ["Backend", "Design", "DevOps", "Testing", "Docs", "Security", "Performance", "Review"];
+
+    /* Departments a member can belong to (and a published skill can be scoped to). */
+    const DEPARTMENTS = ["Engineering", "Design", "Product", "QA", "Docs", "Security"];
+
+    /* ----------------------------------------------------------------------
+       Accounts — the in-memory directory the login/register screens match against.
+       Roles are now only "member" and "admin". Members carry a department;
+       admins have department null (they see and curate everything).
+    ---------------------------------------------------------------------- */
+    const accounts = [
+      { id: "u-mina", name: "Mina Torres", role: "member", email: "mina@skillhub.local", department: "Engineering", initials: "MT", sub: "Member · Engineering" },
+      { id: "u-owen", name: "Owen Park", role: "member", email: "owen@skillhub.local", department: "Design", initials: "OP", sub: "Member · Design" },
+      { id: "u-rae", name: "Rae Singh", role: "member", email: "rae@skillhub.local", department: "Docs", initials: "RS", sub: "Member · Docs" },
+      { id: "u-admin", name: "Priya Nayar", role: "admin", email: "admin@skillhub.local", department: null, initials: "PN", sub: "Catalog admin" }
+    ];
+
+    function accountByEmail(email) {
+      const e = String(email || "").trim().toLowerCase();
+      return accounts.find((a) => a.email.toLowerCase() === e) || null;
+    }
+    function accountById(id) { return accounts.find((a) => a.id === id) || null; }
+
+    /* Approved install-command format (acceptance criterion). */
+    const CMD_RE = /^(codex|claude|gemini|opencode)\s+skill\s+(install|add)\s+[A-Za-z0-9._\/-]+$/;
+
+    /* ----------------------------------------------------------------------
+       App state
+    ---------------------------------------------------------------------- */
+    const state = {
+      user: null,              // the signed-in account, or null when logged out
+      role: null,              // synced mirror of user.role (null when logged out)
+      authPage: "login",       // login | register (only used while logged out)
+      authError: "",           // inline auth error message
+      page: "dashboard",
+      mode: "loaded",          // loaded | empty | error
+      selectedId: null,
+      detailFrom: "dashboard",
+      detailEdit: false,
+      search: "",
+      category: "All",
+      trust: "all",            // all | featured
+      sort: "newest",
+      queueFilter: "pending",  // pending | rejected | unpublished | published | all
+      busy: {},                // key -> true while an async action runs
+      loading: false,
+      form: blankForm(),
+      formErrors: {},
+      authErrors: {},          // per-field errors on the register form
+      regForm: { email: "", name: "", department: "" }  // sticky register-form values
+    };
+
+    function blankForm() {
+      return { name: "", category: "", tags: "", command: "", source: "", summary: "", usage: "" };
+    }
+
+    /* Navigation differs per role — this is the visible half of permissions. */
+    const NAV = {
+      member: [
+        { page: "browse", label: "Browse skills", icon: "compass" },
+        { page: "mine", label: "My submissions", icon: "folder-open" },
+        { page: "submit", label: "Submit a skill", icon: "upload" }
+      ],
+      admin: [
+        { page: "dashboard", label: "Dashboard", icon: "layout-dashboard" },
+        { page: "queue", label: "Review queue", icon: "inbox" },
+        { page: "browse", label: "Catalog preview", icon: "compass" },
+        { page: "departments", label: "Departments", icon: "building-2" }
+      ]
+    };
+
+    const PAGE_COPY = {
+      dashboard: ["Review Command Center", "Operational dashboard for submission review, lifecycle management, and permission-safe curation."],
+      queue: ["Review Queue", "Triage pending, rejected, unpublished, and published records — with double-click-safe actions."],
+      browse: ["Skill Catalog", "Published skills available to you, searchable and copy-ready. Members see their department's skills; admins preview the full catalog."],
+      mine: ["My Submissions", "Your own drafts, pending, rejected, and published skills. You can edit only what you own."],
+      submit: ["Submit a Skill", "Provide metadata for review. Submissions enter a pending state and stay private until an admin publishes them."],
+      detail: ["Submission Review", "Submitter metadata, install command, source link, and the decision controls available to your role."],
+      departments: ["Departments", "Manage departments and see how many members and published skills each one covers."]
+    };
+
+    /* ----------------------------------------------------------------------
+       Helpers
+    ---------------------------------------------------------------------- */
+    const view = document.getElementById("view");
+    const title = document.getElementById("pageTitle");
+    const subtitle = document.getElementById("pageSubtitle");
+
+    function user() { return state.user; }
+    function byId(id) { return skills.find((s) => s.id === id); }
+    function icon(name) { return `<i data-lucide="${name}"></i>`; }
+
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function refreshIcons(root) {
+      if (window.lucide) window.lucide.createIcons(root ? { nameAttr: "data-lucide", attrs: {}, } : undefined);
+    }
+
+    /* A published skill is available to a department when it is org-wide (no
+       department list) or explicitly includes that department. */
+    function publishedAvailableTo(s, dept) {
+      return s.status === "published" && (s.departments.length === 0 || s.departments.includes(dept));
+    }
+
+    /* Which skills the current account is allowed to see at all. */
+    function visibleSkills() {
+      const u = user();
+      if (!u) return [];
+      if (u.role === "admin") return skills;
+      // member: own submissions + published skills available to their department
+      return skills.filter((s) => s.ownerId === u.id || publishedAvailableTo(s, u.department));
+    }
+
+    /* The published catalog from the current viewer's perspective:
+       members see only what's available to their department; admins preview all
+       published skills. Used by renderBrowse, browseResultsHTML, and the count. */
+    function publishedForViewer() {
+      const u = user();
+      if (u && u.role === "admin") return skills.filter((s) => s.status === "published");
+      return skills.filter((s) => publishedAvailableTo(s, u ? u.department : null));
+    }
+
+    /* Permission check — the enforced half of permissions. */
+    function can(action, skill) {
+      const u = user();
+      if (!u) return false;
+      if (u.role === "admin") {
+        return ["publish", "reject", "feature", "unpublish", "assign", "viewQueue", "submit", "copy", "viewSource", "edit"].includes(action);
+      }
+      if (u.role === "member") {
+        if (["publish", "reject", "feature", "unpublish", "assign", "viewQueue"].includes(action)) return false;
+        if (action === "submit" || action === "copy" || action === "viewSource") return true;
+        if (action === "edit") return !!skill && skill.ownerId === u.id && (skill.status === "draft" || skill.status === "rejected");
+        return false;
+      }
+      return false;
+    }
+
+    function statusBadge(status) {
+      const map = {
+        pending: ["pending", "clock", "Pending review"],
+        published: ["published", "globe", "Published"],
+        rejected: ["rejected", "x-circle", "Rejected"],
+        unpublished: ["unpublished", "eye-off", "Unpublished"],
+        draft: ["draft", "pencil", "Draft"]
+      };
+      const [cls, ic, label] = map[status] || ["draft", "circle", status];
+      return `<span class="badge ${cls}">${icon(ic)}${label}</span>`;
+    }
+
+    /* ----------------------------------------------------------------------
+       Toasts
+    ---------------------------------------------------------------------- */
+    let toastSeq = 0;
+    function toast(message, kind = "info") {
+      const wrap = document.getElementById("toasts");
+      const id = "toast-" + (++toastSeq);
+      const ic = kind === "success" ? "check-circle" : kind === "error" ? "alert-triangle" : "info";
+      const el = document.createElement("div");
+      el.className = "toast " + kind;
+      el.id = id;
+      el.innerHTML = `${icon(ic)}<div class="t-body">${esc(message)}</div><button class="t-close" data-act="dismiss-toast" data-id="${id}" aria-label="Dismiss">${icon("x")}</button>`;
+      wrap.appendChild(el);
+      refreshIcons(el);
+      setTimeout(() => { const n = document.getElementById(id); if (n) n.remove(); }, 3600);
+    }
+
+    /* ----------------------------------------------------------------------
+       Modal (reject reason, unpublish confirm)
+    ---------------------------------------------------------------------- */
+    let modalConfirm = null;
+    function openModal({ title: t, body, confirmLabel, confirmKind = "primary", needsReason = false, onConfirm }) {
+      modalConfirm = { onConfirm, needsReason };
+      const root = document.getElementById("modalRoot");
+      root.innerHTML = `
+        <div class="modal-backdrop" data-act="modal-backdrop">
+          <div class="modal" role="dialog" aria-modal="true">
+            <h3>${esc(t)}</h3>
+            <p class="muted" style="margin:0">${body}</p>
+            ${needsReason ? `<textarea id="modalReason" placeholder="Share a clear reason the submitter can act on…"></textarea><div class="help" id="modalErr"></div>` : ""}
+            <div class="modal-actions">
+              <button class="ghost" data-act="close-modal">Cancel</button>
+              <button class="${confirmKind}" data-act="confirm-modal">${esc(confirmLabel)}</button>
+            </div>
+          </div>
+        </div>`;
+      refreshIcons(root);
+      const ta = document.getElementById("modalReason");
+      if (ta) ta.focus();
+    }
+
+    function closeModal() {
+      document.getElementById("modalRoot").innerHTML = "";
+      modalConfirm = null;
+    }
+
+    /* ----------------------------------------------------------------------
+       Mutating actions — idempotent + double-click safe + busy spinners
+    ---------------------------------------------------------------------- */
+    function runAction(key, mutate, successMsg) {
+      if (state.busy[key]) return;          // in-flight guard
+      state.busy[key] = true;
+      render();
+      setTimeout(() => {
+        mutate();
+        delete state.busy[key];
+        render();
+        if (successMsg) toast(successMsg, "success");
+      }, 520);
+    }
+
+    function publishSkill(id) {
+      const s = byId(id);
+      if (!s || !can("publish")) return toast("Admin role required to publish.", "error");
+      if (s.status === "published") return toast(`${s.name} is already published.`, "info"); // idempotent
+      if (s.status !== "pending" && s.status !== "unpublished") return toast("Only pending or unpublished skills can be published.", "error");
+      runAction("publish:" + id, () => { s.status = "published"; s.updated = "just now"; s.rejectionReason = ""; }, `Published “${s.name}” — now live in the catalog${s.departments.length ? " for " + s.departments.join(", ") : " org-wide"}.`);
+    }
+
+    function rejectSkill(id) {
+      const s = byId(id);
+      if (!s || !can("reject")) return toast("Admin role required to reject.", "error");
+      if (s.status !== "pending") return toast("Only pending skills can be rejected.", "error");
+      openModal({
+        title: `Reject “${s.name}”?`,
+        body: "The submitter keeps the record and your reason, and can resubmit. It stays out of the catalog.",
+        confirmLabel: "Reject with reason",
+        confirmKind: "danger",
+        needsReason: true,
+        onConfirm: (reason) => {
+          runAction("reject:" + id, () => { s.status = "rejected"; s.rejectionReason = reason; s.featured = false; s.updated = "just now"; }, `Rejected “${s.name}” and sent the reason to ${s.author}.`);
+        }
+      });
+    }
+
+    function toggleFeature(id) {
+      const s = byId(id);
+      if (!s || !can("feature")) return toast("Admin role required to feature.", "error");
+      if (s.status !== "published") return toast("Only published skills can be featured.", "error");
+      runAction("feature:" + id, () => { s.featured = !s.featured; }, s.featured ? `Removed “${s.name}” from featured.` : `Featured “${s.name}”.`);
+    }
+
+    function unpublishSkill(id) {
+      const s = byId(id);
+      if (!s || !can("unpublish")) return toast("Admin role required to unpublish.", "error");
+      if (s.status !== "published") return toast(`${s.name} is not currently published.`, "info");
+      openModal({
+        title: `Unpublish “${s.name}”?`,
+        body: "It will be removed from the catalog immediately. The submitter and admins can still see it.",
+        confirmLabel: "Unpublish",
+        confirmKind: "danger",
+        onConfirm: () => {
+          runAction("unpublish:" + id, () => { s.status = "unpublished"; s.featured = false; s.updated = "just now"; }, `Unpublished “${s.name}”.`);
+        }
+      });
+    }
+
+    function resubmitSkill(id) {
+      const s = byId(id);
+      if (!s || !can("edit", s)) return toast("You can only resubmit your own draft or rejected skills.", "error");
+      if (s.status === "pending") return toast(`${s.name} is already pending review.`, "info");
+      runAction("resubmit:" + id, () => { s.status = "pending"; s.rejectionReason = ""; s.risk = "Low risk"; s.updated = "just now"; }, `Resubmitted “${s.name}” for review.`);
+    }
+
+    /* Admin-only: toggle a department in a published skill's availability list. */
+    function toggleDept(id, dept) {
+      const s = byId(id);
+      if (!s || !can("assign")) return toast("Admin role required to assign departments.", "error");
+      if (s.status !== "published") return toast("Only published skills can be assigned to departments.", "error");
+      if (!DEPARTMENTS.includes(dept)) return;
+      const key = "dept:" + id + ":" + dept;
+      const has = s.departments.includes(dept);
+      runAction(key, () => {
+        if (has) s.departments = s.departments.filter((d) => d !== dept);
+        else s.departments = s.departments.concat(dept);
+        s.updated = "just now";
+      }, has ? `Removed “${s.name}” from ${dept}.` : `Made “${s.name}” available to ${dept}.`);
+    }
+
+    function saveEdit(id) {
+      const s = byId(id);
+      if (!s || !can("edit", s)) return toast("You can only edit your own draft or rejected skills.", "error");
+      const cmd = document.getElementById("editCommand");
+      const usage = document.getElementById("editUsage");
+      const src = document.getElementById("editSource");
+      if (cmd && !CMD_RE.test(cmd.value.trim())) return toast("Install command format is not valid yet.", "error");
+      runAction("save:" + id, () => {
+        if (cmd) s.command = cmd.value.trim();
+        if (usage) s.usage = usage.value.trim();
+        if (src) s.source = src.value.trim();
+        s.updated = "just now";
+      }, `Saved changes to “${s.name}”.`);
+      state.detailEdit = false;
+    }
+
+    /* Copy with real clipboard + success/failure feedback. */
+    async function copyCommand(cmd, el) {
+      if (state.mode === "error") {            // demo: error mode exercises the failure path
+        toast("Copy failed — clipboard unavailable. Try again.", "error");
+        return;
+      }
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(cmd);
+        ok = true;
+      } catch (e) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = cmd; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e2) { ok = false; }
+      }
+      if (ok) {
+        toast("Install command copied to clipboard.", "success");
+        if (el) {
+          const original = el.innerHTML;
+          el.innerHTML = `${icon("check")}Copied`;
+          refreshIcons(el);
+          el.disabled = true;
+          setTimeout(() => { el.innerHTML = original; el.disabled = false; refreshIcons(el); }, 1400);
+        }
+      } else {
+        toast("Copy failed — select the command and copy manually.", "error");
+      }
+    }
+
+    function openSource(url) {
+      if (!url) return toast("No source link provided.", "error");
+      const full = /^https?:\/\//.test(url) ? url : "https://" + url;
+      toast("Opening source in a new tab…", "info");
+      window.open(full, "_blank", "noopener");
+    }
+
+    function submitForm() {
+      if (state.busy.submit) return;
+      const f = {
+        name: val("f_name"), category: val("f_category"), tags: val("f_tags"),
+        command: val("f_command"), source: val("f_source"), summary: val("f_summary"), usage: val("f_usage")
+      };
+      state.form = f;
+      const errors = {};
+      if (!f.name) errors.name = "Skill name is required.";
+      if (!f.category) errors.category = "Choose a category.";
+      if (!f.summary) errors.summary = "A short description is required.";
+      if (!f.command) errors.command = "Install command is required.";
+      else if (!CMD_RE.test(f.command)) errors.command = "Must look like “codex skill install owner/name” (codex, claude, gemini, or opencode).";
+      if (!f.source) errors.source = "Source / reference link is required.";
+
+      // duplicate checks against existing catalog
+      if (f.name && skills.some((s) => s.name.toLowerCase() === f.name.toLowerCase()))
+        errors.name = "A skill with this name already exists.";
+      if (f.source && skills.some((s) => s.source.toLowerCase() === f.source.toLowerCase().replace(/^https?:\/\//, "")))
+        errors.source = "This source link is already in the catalog.";
+
+      state.formErrors = errors;
+      if (Object.keys(errors).length) {
+        renderSubmitErrors();
+        toast("Please fix the highlighted fields.", "error");
+        return;
+      }
+
+      state.busy.submit = true;
+      render();
+      setTimeout(() => {
+        const id = "s" + (++nextId);
+        skills.unshift({
+          id, name: f.name, author: user().name, ownerId: user().id,
+          category: f.category, status: "pending", featured: false, risk: "Low risk",
+          command: f.command, source: f.source.replace(/^https?:\/\//, ""),
+          summary: f.summary, tags: f.tags ? f.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+          usage: f.usage, updated: "just now", rejectionReason: "", departments: []
+        });
+        delete state.busy.submit;
+        state.form = blankForm();
+        state.formErrors = {};
+        state.page = "mine";
+        render();
+        toast(`“${f.name}” submitted — now pending review.`, "success");
+      }, 640);
+    }
+
+    function val(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : "";
+    }
+
+    function renderSubmitErrors() {
+      ["name", "category", "summary", "command", "source"].forEach((key) => {
+        const field = document.getElementById("field_" + key);
+        const help = document.getElementById("err_" + key);
+        if (!field || !help) return;
+        if (state.formErrors[key]) { field.classList.add("invalid"); help.textContent = state.formErrors[key]; }
+        else { field.classList.remove("invalid"); help.textContent = ""; }
+      });
+      const firstKey = Object.keys(state.formErrors)[0];
+      const focus = document.getElementById("f_" + firstKey);
+      if (focus) focus.focus();
+    }
+
+    /* ----------------------------------------------------------------------
+       Auth — login / register / logout gate the whole app
+    ---------------------------------------------------------------------- */
+    function landingPage(account) { return account.role === "admin" ? "dashboard" : "browse"; }
+
+    /* Sign in a known account object and enter the app. */
+    function enterApp(account, greet) {
+      state.user = account;
+      state.role = account.role;          // keep the mirror in sync
+      state.authError = "";
+      state.authErrors = {};
+      state.regForm = { email: "", name: "", department: "" };
+      state.page = landingPage(account);
+      state.selectedId = null;
+      state.detailEdit = false;
+      state.mode = "loaded";
+      state.search = ""; state.category = "All"; state.trust = "all";
+      render();
+      if (greet) toast(greet, "success");
+    }
+
+    function login() {
+      const email = val("login_email");
+      const password = val("login_password");
+      const account = accountByEmail(email);
+      if (!account || !password) {
+        state.authError = !password
+          ? "Enter your password to sign in."
+          : "No account matches that email. Try a demo account or create one.";
+        render();
+        toast(state.authError, "error");
+        return;
+      }
+      enterApp(account, `Signed in as ${account.name}.`);
+    }
+
+    /* One-click demo sign-in by account id (login screen + sidebar demo switch). */
+    function loginAs(id) {
+      const account = accountById(id);
+      if (!account) return toast("Unknown demo account.", "error");
+      enterApp(account, `Signed in as ${account.name} (${account.role}${account.department ? " · " + account.department : ""}).`);
+    }
+
+    function register() {
+      const email = val("reg_email");
+      const name = val("reg_name");
+      const password = val("reg_password");
+      const department = val("reg_department");
+      // preserve entries across a re-render on validation failure
+      state.regForm = { email, name, department };
+      const errors = {};
+      if (!email) errors.email = "Work email is required.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter a valid email address.";
+      else if (accountByEmail(email)) errors.email = "An account with this email already exists.";
+      if (!name) errors.name = "Display name is required.";
+      if (!password) errors.password = "Choose a password.";
+      if (!department) errors.department = "Select your department.";
+
+      state.authErrors = errors;
+      if (Object.keys(errors).length) { render(); toast("Please fix the highlighted fields.", "error"); return; }
+
+      const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "U";
+      const account = {
+        id: "u-" + (++nextId), name, role: "member", email: email.toLowerCase(),
+        department, initials, sub: "Member · " + department
+      };
+      accounts.push(account);
+      enterApp(account, `Account created — welcome, ${name}.`);
+    }
+
+    function logout() {
+      state.user = null;
+      state.role = null;
+      state.authPage = "login";
+      state.authError = "";
+      state.authErrors = {};
+      state.detailEdit = false;
+      state.selectedId = null;
+      render();
+      toast("Signed out.", "info");
+    }
+
+    function setAuthPage(page) {
+      state.authPage = page;
+      state.authError = "";
+      state.authErrors = {};
+      state.regForm = { email: "", name: "", department: "" };
+      render();
+    }
+
+    function canSeeSelected() {
+      const s = byId(state.selectedId);
+      if (!s) return false;
+      return visibleSkills().some((v) => v.id === s.id);
+    }
+
+    function setPage(page) {
+      state.page = page;
+      state.detailEdit = false;
+      render();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      if (mode === "loaded") {
+        // demonstrate recovery -> loading -> loaded
+        state.loading = true;
+        render();
+        setTimeout(() => { state.loading = false; render(); }, 600);
+      } else {
+        render();
+      }
+    }
+
+    function openDetail(id, from) {
+      const s = byId(id);
+      if (!s) return;
+      if (!visibleSkills().some((v) => v.id === id)) { toast("You do not have access to that record.", "error"); return; }
+      state.selectedId = id;
+      state.detailFrom = from || state.page;
+      state.detailEdit = false;
+      state.page = "detail";
+      render();
+    }
+
+    /* ----------------------------------------------------------------------
+       Reusable render fragments
+    ---------------------------------------------------------------------- */
+    function statePanel(kind, heading, copy, action, secondaryPage) {
+      const iconClass = kind === "error" ? "error" : kind === "restricted" ? "locked" : "muted";
+      const iconName = kind === "error" ? "server-crash" : kind === "restricted" ? "lock-keyhole" : "inbox";
+      const home = (NAV[state.role] || NAV.member)[0].page;
+      return `
+        <section class="state-panel">
+          <div class="state-card">
+            <div class="state-icon ${iconClass}">${icon(iconName)}</div>
+            <h2>${esc(heading)}</h2>
+            <p class="muted">${esc(copy)}</p>
+            <div class="actions">
+              <button class="primary" data-act="mode" data-id="loaded">${icon("rotate-cw")}${esc(action)}</button>
+              <button class="ghost" data-act="nav" data-id="${secondaryPage || home}">${icon("compass")}Go to ${PAGE_COPY[secondaryPage || home][0]}</button>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function skeleton() {
+      return `
+        <section>
+          <div class="skel" style="height:64px;margin-bottom:16px"></div>
+          <div class="card-grid">
+            ${Array.from({ length: 4 }).map(() => `<div class="skill-card"><div class="skel" style="height:18px;width:55%"></div><div class="skel" style="height:14px;width:90%"></div><div class="skel" style="height:14px;width:75%"></div><div class="skel" style="height:34px;width:60%;margin-top:8px"></div></div>`).join("")}
+          </div>
+        </section>`;
+    }
+
+    function busySpinner(label) { return `<span class="spinner"></span>${label}`; }
+
+    /* Admin decision buttons — only rendered for admins (hidden, not disabled, for others). */
+    function adminActions(s, small) {
+      const cls = small ? " btn-small" : "";
+      const out = [];
+      const pubBusy = state.busy["publish:" + s.id];
+      const rejBusy = state.busy["reject:" + s.id];
+      const featBusy = state.busy["feature:" + s.id];
+      const unpubBusy = state.busy["unpublish:" + s.id];
+      if (s.status === "pending" || s.status === "unpublished") {
+        out.push(`<button class="primary${cls}" data-act="publish" data-id="${s.id}" ${pubBusy ? "disabled" : ""}>${pubBusy ? busySpinner("Publishing…") : icon("check") + "Publish"}</button>`);
+      }
+      if (s.status === "pending") {
+        out.push(`<button class="danger${cls}" data-act="reject" data-id="${s.id}" ${rejBusy ? "disabled" : ""}>${rejBusy ? busySpinner("Rejecting…") : icon("x") + "Reject"}</button>`);
+      }
+      if (s.status === "published") {
+        out.push(`<button class="secondary${cls}" data-act="feature" data-id="${s.id}" ${featBusy ? "disabled" : ""}>${featBusy ? busySpinner("…") : icon("star") + (s.featured ? "Unfeature" : "Feature")}</button>`);
+        out.push(`<button class="danger${cls}" data-act="unpublish" data-id="${s.id}" ${unpubBusy ? "disabled" : ""}>${unpubBusy ? busySpinner("…") : icon("archive") + "Unpublish"}</button>`);
+      }
+      return out.join("");
+    }
+
+    /* Admin-only: department-availability toggle chips for a published skill. */
+    function deptAssignControl(s) {
+      if (s.status !== "published" || !can("assign")) return "";
+      const chips = DEPARTMENTS.map((d) => {
+        const on = s.departments.includes(d);
+        const busy = state.busy["dept:" + s.id + ":" + d];
+        return `<button class="chip dept-toggle ${on ? "is-on" : ""}" data-act="toggle-dept" data-id="${s.id}" data-dept="${esc(d)}" ${busy ? "disabled" : ""}>${busy ? busySpinner("…") : (on ? icon("check") : icon("plus")) + esc(d)}</button>`;
+      }).join("");
+      const orgWide = s.departments.length === 0;
+      return `
+        <div style="margin-top:14px">
+          <h3 style="margin:0 0 6px">Available to departments</h3>
+          <p class="muted" style="margin:0 0 8px;font-size:13px">${orgWide
+            ? "<strong>Org-wide</strong> — visible to every department. Add a department to scope it."
+            : "Visible to: <strong>" + esc(s.departments.join(", ")) + "</strong>. Remove all to make it org-wide."}</p>
+          <div class="chip-row">${chips}</div>
+        </div>`;
+    }
+
+    function queueRow(s, context) {
+      const blocked = /duplicate|source review/i.test(s.risk);
+      const canReview = visibleSkills().some((v) => v.id === s.id);
+      const actions = [];
+      actions.push(`<button class="secondary btn-small" data-act="open-detail" data-id="${s.id}" data-from="${context}">${icon("eye")}Review</button>`);
+      if (state.role === "admin") {
+        actions.push(adminActions(s, true));
+      } else if (can("edit", s)) {
+        actions.push(`<button class="ghost btn-small" data-act="open-detail" data-id="${s.id}" data-from="${context}" data-edit="1">${icon("pencil")}Edit</button>`);
+        if (s.status === "rejected") actions.push(`<button class="primary btn-small" data-act="resubmit" data-id="${s.id}" ${state.busy["resubmit:" + s.id] ? "disabled" : ""}>${state.busy["resubmit:" + s.id] ? busySpinner("…") : icon("rotate-cw") + "Resubmit"}</button>`);
+      }
+      return `
+        <article class="queue-row">
+          <div class="row-main">
+            <div class="badge-row">
+              ${statusBadge(s.status)}
+              ${s.featured ? `<span class="badge featured">${icon("star")}Featured</span>` : ""}
+              <span class="badge ${blocked ? "blocked" : "safe"}">${icon(blocked ? "alert-triangle" : "shield-check")}${esc(s.risk)}</span>
+              <span class="tag">${esc(s.category)}</span>
+            </div>
+            <h3>${esc(s.name)}</h3>
+            <p>${esc(s.summary)}</p>
+          </div>
+          <div class="actions">${actions.join("")}</div>
+        </article>`;
+    }
+
+    function skillCard(s) {
+      return `
+        <article class="skill-card">
+          <div class="badge-row">
+            ${s.featured ? `<span class="badge featured">${icon("star")}Featured</span>` : `<span class="badge published">${icon("globe")}Published</span>`}
+            <span class="tag">${esc(s.category)}</span>
+          </div>
+          <h3>${esc(s.name)}</h3>
+          <p class="desc">${esc(s.summary)}</p>
+          <div class="card-by">${icon("user")}by ${esc(s.author)}</div>
+          <div class="card-foot">
+            <button class="secondary btn-small" data-act="open-detail" data-id="${s.id}" data-from="browse">${icon("file-text")}View details</button>
+            <button class="primary btn-small" data-act="copy" data-cmd="${esc(s.command)}">${icon("copy")}Copy install</button>
+          </div>
+        </article>`;
+    }
+
+    /* ----------------------------------------------------------------------
+       Pages
+    ---------------------------------------------------------------------- */
+    function renderDashboard() {
+      if (state.mode === "empty") return statePanel("empty", "No work in the queue", "Every submission has been published, rejected, or returned to its submitter. The dashboard keeps this success state visible instead of looking broken.", "Reload sample work");
+      if (state.mode === "error") return statePanel("error", "Operational data failed to load", "A clear network failure with a safe retry path — reviewers never act on stale data.", "Retry dashboard");
+
+      const pending = skills.filter((s) => s.status === "pending");
+      const published = skills.filter((s) => s.status === "published");
+      const featured = skills.filter((s) => s.featured);
+      const flagged = skills.filter((s) => /duplicate|source review/i.test(s.risk) && s.status === "pending");
+
+      return `
+        <section class="metric-grid">
+          <div class="metric cyan"><strong>${pending.length}</strong><span>pending review</span></div>
+          <div class="metric lime"><strong>${published.length}</strong><span>published live</span></div>
+          <div class="metric violet"><strong>${featured.length}</strong><span>featured skills</span></div>
+          <div class="metric amber"><strong>${flagged.length}</strong><span>flagged for risk</span></div>
+        </section>
+        <section class="layout">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Priority queue</h2>
+                <p class="muted">Scan risk, open a record, or publish without losing context. Actions are idempotent.</p>
+              </div>
+              <button class="ghost" data-act="show-rules">${icon("sliders-horizontal")}Lifecycle rules</button>
+            </div>
+            <div class="queue-list">
+              ${pending.length ? pending.map((s) => queueRow(s, "dashboard")).join("") : `<p class="muted">No pending submissions right now.</p>`}
+            </div>
+          </div>
+          <aside class="review-card">
+            <span class="badge published">${icon("shield-check")}Admin role</span>
+            <h2>Lifecycle guardrails</h2>
+            <p class="muted">Pending records can be published or rejected; unpublished records can be restored. Drafts and rejected records must be submitted again before review.</p>
+            <ul class="timeline">
+              <li><span>${icon("pen-line")}</span><span>Member submits complete metadata.</span></li>
+              <li><span>${icon("shield-check")}</span><span>Admin checks source, command, duplicate risk, and usage notes.</span></li>
+              <li><span>${icon("globe")}</span><span>Published skills appear in members' department catalogs and detail pages.</span></li>
+            </ul>
+          </aside>
+        </section>`;
+    }
+
+    function renderQueue() {
+      if (state.mode === "error") return statePanel("error", "Queue refresh failed", "The queue blocks accidental publish or reject actions while data freshness is unknown.", "Retry queue");
+
+      const filters = [
+        ["pending", "Pending", "clock"],
+        ["rejected", "Rejected", "x-circle"],
+        ["unpublished", "Unpublished", "eye-off"],
+        ["published", "Published", "globe"],
+        ["all", "All", "layers"]
+      ];
+      const rows = skills.filter((s) => state.queueFilter === "all" ? true : s.status === state.queueFilter);
+
+      const tabs = filters.map(([key, label, ic]) => {
+        const count = key === "all" ? skills.length : skills.filter((s) => s.status === key).length;
+        return `<button class="chip ${state.queueFilter === key ? "is-active" : ""}" data-act="queue-filter" data-id="${key}">${icon(ic)}${label} <span style="opacity:.7">${count}</span></button>`;
+      }).join("");
+
+      const body = state.mode === "empty" || rows.length === 0
+        ? `<div class="empty-inline"><div class="state-icon muted">${icon("inbox")}</div><div><h3 style="margin:0 0 4px">Nothing in “${esc(filters.find((f) => f[0] === state.queueFilter)[1])}”</h3><p class="muted" style="margin:0">Switch lifecycle tabs to find other records.</p></div><button class="ghost" data-act="queue-filter" data-id="all">${icon("layers")}Show all records</button></div>`
+        : `<div class="queue-list">${rows.map((s) => queueRow(s, "queue")).join("")}</div>`;
+
+      return `
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Pending review queue</h2>
+              <p class="muted">Optimized for repeated admin action with duplicate-click-safe controls.</p>
+            </div>
+          </div>
+          <div class="chip-row" style="margin-bottom:14px">${tabs}</div>
+          ${body}
+        </section>`;
+    }
+
+    function renderBrowse() {
+      if (state.mode === "error") return statePanel("error", "Catalog failed to load", "Members get a clear error instead of a broken catalog, with a retry that does not change any data.", "Retry catalog");
+
+      const u = user();
+      const isAdmin = u.role === "admin";
+      let list = publishedForViewer();
+      const totalPublished = list.length;
+      if (state.category !== "All") list = list.filter((s) => s.category === state.category);
+      if (state.trust === "featured") list = list.filter((s) => s.featured);
+      const q = state.search.trim().toLowerCase();
+      if (q) list = list.filter((s) => (s.name + " " + s.summary + " " + s.tags.join(" ") + " " + s.author).toLowerCase().includes(q));
+      list = sortSkills(list);
+
+      const cats = ["All", ...CATEGORIES].map((c) =>
+        `<button class="chip ${state.category === c ? "is-active" : ""}" data-act="category" data-id="${esc(c)}">${esc(c)}</button>`).join("");
+
+      const scopeNote = isAdmin
+        ? `<div class="notice">${icon("eye")}<div>Admin preview — this shows <strong>all published</strong> skills across every department. Members only see skills available to their own department.</div></div>`
+        : `<div class="notice lock">${icon("building-2")}<div>You're viewing the <strong>${esc(u.department)}</strong> catalog. It shows published skills made available to your department (plus org-wide skills). Your own submissions live under <strong>My submissions</strong>.</div></div>`;
+
+      return `
+        ${scopeNote}<div style="height:14px"></div>
+        <section class="toolbar">
+          <div class="search-line">
+            <label class="search-box">
+              <span class="sr-only">Search skills</span>
+              ${icon("search")}
+              <input id="searchInput" type="search" placeholder="Search published skills by name, tag, or author…" value="${esc(state.search)}" data-input="search" autocomplete="off">
+            </label>
+            <select class="sort-select" data-change="sort" aria-label="Sort">
+              <option value="newest" ${state.sort === "newest" ? "selected" : ""}>Newest</option>
+              <option value="name" ${state.sort === "name" ? "selected" : ""}>Name A–Z</option>
+              <option value="featured" ${state.sort === "featured" ? "selected" : ""}>Featured first</option>
+            </select>
+          </div>
+          <div class="chip-row">
+            ${cats}
+            <span class="chip-sep"></span>
+            <button class="chip trust ${state.trust === "featured" ? "is-active" : ""}" data-act="trust" data-id="featured">${icon("star")}Featured only</button>
+            ${(state.search || state.category !== "All" || state.trust !== "all") ? `<button class="chip" data-act="reset-filters">${icon("x")}Reset</button>` : ""}
+          </div>
+        </section>
+        <div class="result-meta">
+          <span id="browseCount">${list.length} of ${totalPublished} published skill${totalPublished === 1 ? "" : "s"}</span>
+          <span>${isAdmin ? "Admin preview of the full catalog" : "Scoped to " + esc(u.department) + " • copy install commands freely"}</span>
+        </div>
+        <section class="card-grid" id="browseResults">${browseResultsHTML(list)}</section>`;
+    }
+
+    function browseResultsHTML(list) {
+      if (!list) {
+        let l = publishedForViewer();
+        if (state.category !== "All") l = l.filter((s) => s.category === state.category);
+        if (state.trust === "featured") l = l.filter((s) => s.featured);
+        const q = state.search.trim().toLowerCase();
+        if (q) l = l.filter((s) => (s.name + " " + s.summary + " " + s.tags.join(" ") + " " + s.author).toLowerCase().includes(q));
+        list = sortSkills(l);
+      }
+      if (!list.length) {
+        return `<div class="empty-inline"><div class="state-icon muted">${icon("search-x")}</div><div><h3 style="margin:0 0 4px">No skills match your filters</h3><p class="muted" style="margin:0">Try a different keyword, category, or clear the filters.</p></div><button class="ghost" data-act="reset-filters">${icon("rotate-cw")}Reset filters</button></div>`;
+      }
+      return list.map(skillCard).join("");
+    }
+
+    function sortSkills(list) {
+      const copy = list.slice();
+      if (state.sort === "name") copy.sort((a, b) => a.name.localeCompare(b.name));
+      else if (state.sort === "featured") copy.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+      return copy;
+    }
+
+    function renderMine() {
+      const mine = skills.filter((s) => s.ownerId === user().id);
+      const head = `
+        <div class="panel-head">
+          <div>
+            <h2>My submissions</h2>
+            <p class="muted">You can edit only your own draft or rejected skills. Published and pending records are read-only.</p>
+          </div>
+          <button class="primary" data-act="nav" data-id="submit">${icon("plus")}New submission</button>
+        </div>`;
+
+      if (state.mode === "error") return statePanel("error", "Could not load your submissions", "Your data is safe — this is only a load failure. Retry to fetch your records again.", "Retry");
+      if (state.mode === "empty" || mine.length === 0) {
+        return `<section class="panel">${head}<div class="empty-inline"><div class="state-icon muted">${icon("folder-open")}</div><div><h3 style="margin:0 0 4px">You haven't submitted any skills yet</h3><p class="muted" style="margin:0">Submit your first skill to send it into the review queue.</p></div><button class="primary" data-act="nav" data-id="submit">${icon("upload")}Submit a skill</button></div></section>`;
+      }
+
+      return `
+        <section class="panel">
+          ${head}
+          <div class="queue-list">
+            ${mine.map((s) => mineRow(s)).join("")}
+          </div>
+        </section>`;
+    }
+
+    function mineRow(s) {
+      const editable = s.status === "draft" || s.status === "rejected";
+      const actions = [`<button class="secondary btn-small" data-act="open-detail" data-id="${s.id}" data-from="mine">${icon("eye")}Open</button>`];
+      if (editable) actions.push(`<button class="ghost btn-small" data-act="open-detail" data-id="${s.id}" data-from="mine" data-edit="1">${icon("pencil")}Edit</button>`);
+      if (s.status === "rejected") actions.push(`<button class="primary btn-small" data-act="resubmit" data-id="${s.id}" ${state.busy["resubmit:" + s.id] ? "disabled" : ""}>${state.busy["resubmit:" + s.id] ? busySpinner("…") : icon("rotate-cw") + "Resubmit"}</button>`);
+      return `
+        <article class="queue-row">
+          <div class="row-main">
+            <div class="badge-row">${statusBadge(s.status)}${s.featured ? `<span class="badge featured">${icon("star")}Featured</span>` : ""}<span class="tag">${esc(s.category)}</span></div>
+            <h3>${esc(s.name)}</h3>
+            <p>${esc(s.summary)}</p>
+            ${s.status === "rejected" && s.rejectionReason ? `<div class="notice warn" style="margin-top:10px">${icon("alert-triangle")}<div><strong>Rejected:</strong> ${esc(s.rejectionReason)}</div></div>` : ""}
+          </div>
+          <div class="actions">${actions.join("")}</div>
+        </article>`;
+    }
+
+    function renderSubmit() {
+      if (state.mode === "error") {
+        const f = state.form;
+        return `
+          <section class="layout">
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Submission failed to send</h2>
+                  <p class="muted">A server error occurred after you submitted. Your entries are preserved below — just retry.</p>
+                </div>
+                <span class="badge blocked">${icon("wifi-off")}Submit failed</span>
+              </div>
+              <div class="form-grid">
+                <div class="field"><label>Skill name</label><input value="${esc(f.name || "Schema Drift Watcher")}" readonly></div>
+                <div class="field"><label>Category</label><input value="${esc(f.category || "Backend")}" readonly></div>
+                <div class="field full"><label>Install command</label><input value="${esc(f.command || "codex skill install mina/schema-drift-watcher")}" readonly></div>
+              </div>
+            </div>
+            <aside class="review-card">
+              <span class="badge blocked">${icon("alert-triangle")}Network error</span>
+              <h2>Recovery</h2>
+              <p class="muted">Nothing was saved. Retrying re-sends the same data without creating a duplicate.</p>
+              <button class="primary" data-act="mode" data-id="loaded">${icon("rotate-cw")}Retry submit</button>
+            </aside>
+          </section>`;
+      }
+
+      const f = state.form;
+      const submitting = !!state.busy.submit;
+      const opts = CATEGORIES.map((c) => `<option value="${esc(c)}" ${f.category === c ? "selected" : ""}>${esc(c)}</option>`).join("");
+      return `
+        <section class="layout">
+          <form class="panel" onsubmit="return false">
+            <div class="panel-head">
+              <div>
+                <h2>New skill submission</h2>
+                <p class="muted">Submitting as <strong>${esc(user().name)}</strong>${user().department ? " · " + esc(user().department) : ""}. Published skills with no department assignment are org-wide; an admin can scope them to specific departments after publishing. Required fields are marked with <span style="color:var(--red)">*</span>.</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field" id="field_name"><label>Skill name <span class="req">*</span></label><input id="f_name" value="${esc(f.name)}" placeholder="e.g. Schema Drift Watcher"><div class="help" id="err_name"></div></div>
+              <div class="field" id="field_category"><label>Category <span class="req">*</span></label><select id="f_category"><option value="">Select a category…</option>${opts}</select><div class="help" id="err_category"></div></div>
+              <div class="field full" id="field_summary"><label>Short description <span class="req">*</span></label><input id="f_summary" value="${esc(f.summary)}" placeholder="One sentence on what the skill does"><div class="help" id="err_summary"></div></div>
+              <div class="field full" id="field_command"><label>Install command <span class="req">*</span></label><input id="f_command" value="${esc(f.command)}" placeholder="codex skill install owner/skill-name"><div class="help" id="err_command"></div><div class="hint">Approved: codex / claude / gemini / opencode + “skill install” or “skill add” + owner/name.</div></div>
+              <div class="field" id="field_source"><label>Source / reference link <span class="req">*</span></label><input id="f_source" value="${esc(f.source)}" placeholder="github.com/owner/skill"><div class="help" id="err_source"></div></div>
+              <div class="field"><label>Tags</label><input id="f_tags" value="${esc(f.tags)}" placeholder="comma, separated, tags"></div>
+              <div class="field full"><label>Usage notes</label><textarea id="f_usage" placeholder="How and when to use this skill">${esc(f.usage)}</textarea></div>
+            </div>
+            <div class="actions" style="margin-top:16px">
+              <button class="primary" data-act="submit" ${submitting ? "disabled" : ""}>${submitting ? busySpinner("Submitting…") : icon("send") + "Submit for review"}</button>
+              <button class="ghost" data-act="nav" data-id="${state.role === "member" ? "mine" : "browse"}">Cancel</button>
+            </div>
+          </form>
+          <aside class="review-card">
+            <span class="badge readonly">${icon("info")}Before you submit</span>
+            <h2>What happens next</h2>
+            <ul class="timeline">
+              <li><span>${icon("send")}</span><span>Your skill enters <strong>pending review</strong> — private to you and admins.</span></li>
+              <li><span>${icon("shield-check")}</span><span>An admin validates the command, source, and duplicates.</span></li>
+              <li><span>${icon("globe")}</span><span>Once published, it appears in the catalog and an admin can scope it to departments.</span></li>
+            </ul>
+            <div class="notice" style="margin-top:6px">${icon("shield")}<div>Duplicate names and source links are blocked at submit time.</div></div>
+          </aside>
+        </section>`;
+    }
+
+    function renderDetail() {
+      const s = byId(state.selectedId);
+      if (!s) return statePanel("empty", "No submission selected", "Open a record from the catalog, queue, or your submissions to review it here.", "Back to start", NAV[state.role][0].page);
+      if (!visibleSkills().some((v) => v.id === s.id)) {
+        return `<section class="state-panel"><div class="state-card"><div class="state-icon locked">${icon("lock-keyhole")}</div><h2>This skill isn't available to your department</h2><p class="muted">You can only open skills published to your department (or org-wide) plus your own submissions. Head back to your catalog.</p><button class="ghost" data-act="nav" data-id="browse">${icon("compass")}Back to catalog</button></div></section>`;
+      }
+
+      const editing = state.detailEdit && can("edit", s);
+      const ro = editing ? "" : "readonly";
+      const blocked = /duplicate|source review/i.test(s.risk);
+
+      // Role-specific decision panel
+      let panel = "";
+      if (state.role === "admin") {
+        panel = `
+          <span class="badge published">${icon("shield-check")}Admin decision</span>
+          <h2>Decision panel</h2>
+          <p class="muted">Actions are idempotent and disabled while a decision is in progress.</p>
+          <div class="cmd-block">${esc(s.command)}</div>
+          <div class="actions" style="margin-bottom:10px">
+            <button class="ghost btn-small" data-act="copy" data-cmd="${esc(s.command)}">${icon("copy")}Copy</button>
+            <button class="ghost btn-small" data-act="source" data-src="${esc(s.source)}">${icon("external-link")}Open source</button>
+          </div>
+          <div class="actions">${adminActions(s, false)}</div>
+          ${deptAssignControl(s)}`;
+      } else if (can("edit", s)) {
+        panel = `
+          <span class="badge ${s.status === "rejected" ? "rejected" : "draft"}">${icon("pencil")}You own this ${s.status}</span>
+          <h2>Edit & resubmit</h2>
+          <p class="muted">You can edit this ${s.status} record. Saving keeps its state; resubmitting sends it back to review.</p>
+          ${s.status === "rejected" && s.rejectionReason ? `<div class="notice warn">${icon("alert-triangle")}<div><strong>Admin feedback:</strong> ${esc(s.rejectionReason)}</div></div>` : ""}
+          <div class="cmd-block">${esc(s.command)}</div>
+          <div class="actions">
+            ${editing
+              ? `<button class="primary" data-act="save-edit" data-id="${s.id}" ${state.busy["save:" + s.id] ? "disabled" : ""}>${state.busy["save:" + s.id] ? busySpinner("Saving…") : icon("save") + "Save changes"}</button>
+                 <button class="ghost" data-act="cancel-edit">${icon("x")}Cancel</button>`
+              : `<button class="secondary" data-act="edit" data-id="${s.id}">${icon("pencil")}Edit fields</button>`}
+            ${s.status === "rejected" ? `<button class="primary" data-act="resubmit" data-id="${s.id}" ${state.busy["resubmit:" + s.id] ? "disabled" : ""}>${state.busy["resubmit:" + s.id] ? busySpinner("…") : icon("rotate-cw") + "Resubmit"}</button>` : ""}
+          </div>`;
+      } else {
+        // member viewing their own pending/published skill, or a published skill from their catalog
+        panel = `
+          <span class="badge readonly">${icon("eye")}Read-only</span>
+          <h2>Install this skill</h2>
+          <p class="muted">This record is read-only — you can only edit your own draft or rejected skills.</p>
+          <div class="cmd-block">${esc(s.command)}</div>
+          <div class="actions">
+            <button class="primary" data-act="copy" data-cmd="${esc(s.command)}">${icon("copy")}Copy install</button>
+            <button class="ghost" data-act="source" data-src="${esc(s.source)}">${icon("external-link")}Open source</button>
+          </div>`;
+      }
+
+      const showReviewerNotes = state.role === "admin";
+
+      return `
+        <div class="actions" style="margin-bottom:14px">
+          <button class="ghost" data-act="back">${icon("arrow-left")}Back to ${esc(PAGE_COPY[state.detailFrom] ? PAGE_COPY[state.detailFrom][0] : "list")}</button>
+        </div>
+        <section class="layout">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="badge-row">
+                  ${statusBadge(s.status)}
+                  ${s.featured ? `<span class="badge featured">${icon("star")}Featured</span>` : ""}
+                  <span class="badge ${blocked ? "blocked" : "safe"}">${icon(blocked ? "alert-triangle" : "shield-check")}${esc(s.risk)}</span>
+                  <span class="tag">${esc(s.category)}</span>
+                </div>
+                <h2>${esc(s.name)}</h2>
+                <p class="muted">${esc(s.summary)}</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label>Submitter</label><input value="${esc(s.author)}" readonly></div>
+              <div class="field"><label>Last updated</label><input value="${esc(s.updated)}" readonly></div>
+              ${s.status === "published" ? `<div class="field full"><label>Available to</label><input value="${esc(s.departments.length ? s.departments.join(", ") : "Org-wide — all departments")}" readonly></div>` : ""}
+              <div class="field full"><label>Source link</label><input id="editSource" value="${esc(s.source)}" ${ro}></div>
+              <div class="field full"><label>Install command</label><input id="editCommand" value="${esc(s.command)}" ${ro}></div>
+              <div class="field full"><label>Usage notes</label><textarea id="editUsage" ${ro}>${esc(s.usage)}</textarea></div>
+              ${showReviewerNotes ? `<div class="field full"><label>Reviewer notes</label><textarea readonly>${s.status === "rejected" ? esc(s.rejectionReason || "Rejected — see feedback.") : "Command format passes. Source link matches the submitted package. No duplicate found in the catalog."}</textarea></div>` : ""}
+            </div>
+          </article>
+          <aside class="review-card">${panel}</aside>
+        </section>`;
+    }
+
+    /* ----------------------------------------------------------------------
+       Sidebar (role-aware) + main render
+    ---------------------------------------------------------------------- */
+    function renderSidebar() {
+      const u = user();
+      if (!u) return;
+      const roleLabel = u.role === "admin" ? "Admin" : "Member";
+      document.getElementById("account").innerHTML = `
+        <div class="account-head">
+          <div class="avatar ${u.role}">${esc(u.initials)}</div>
+          <div class="account-id">
+            <strong>${esc(u.name)}</strong>
+            <span>${esc(roleLabel)}${u.role === "member" && u.department ? " · " + esc(u.department) : ""}</span>
+          </div>
+        </div>
+        <button class="ghost btn-small" data-act="logout" style="width:100%">${icon("log-out")}Sign out</button>`;
+
+      const pending = skills.filter((s) => s.status === "pending").length;
+      const mineCount = skills.filter((s) => s.ownerId === u.id).length;
+      const nav = NAV[state.role].map((n) => {
+        let count = "";
+        if (n.page === "queue") count = `<span class="count">${pending}</span>`;
+        if (n.page === "dashboard") count = `<span class="count">${pending}</span>`;
+        if (n.page === "mine") count = `<span class="count">${mineCount}</span>`;
+        const active = state.page === n.page || (state.page === "detail" && state.detailFrom === n.page);
+        return `<button class="${active ? "is-active" : ""}" data-act="nav" data-id="${n.page}">${icon(n.icon)}<span>${esc(n.label)}</span>${count}</button>`;
+      }).join("");
+      document.getElementById("sideNav").innerHTML = nav;
+
+      const footByRole = {
+        member: "You can submit skills and manage records you own. Publishing and department assignment are admin-only.",
+        admin: "Full curation access: publish pending or unpublished skills, reject pending skills, feature, unpublish, and assign published skills to departments."
+      };
+      // A clearly-labeled demo affordance so reviewers can flip accounts without re-typing.
+      const demoOptions = accounts.map((a) =>
+        `<option value="${a.id}" ${a.id === u.id ? "selected" : ""}>${esc(a.name)} — ${a.role === "admin" ? "admin" : "member · " + a.department}</option>`).join("");
+      document.getElementById("sideFoot").innerHTML = `
+        ${icon("info")} ${esc(footByRole[state.role] || "")}
+        <div style="margin-top:12px">
+          <label class="side-label" for="demoSwitch" style="margin:0 0 6px;display:block">Demo: switch account</label>
+          <select id="demoSwitch" class="sort-select" data-change="demo-switch" style="width:100%;min-height:36px;font-weight:700">${demoOptions}</select>
+        </div>`;
+    }
+
+    /* ----------------------------------------------------------------------
+       Departments management (admin only)
+    ---------------------------------------------------------------------- */
+    function renderDepartments() {
+      if (state.mode === "error") return statePanel("error", "Departments failed to load", "A clear load failure with a safe retry — no department data is changed.", "Retry departments");
+
+      const published = skills.filter((s) => s.status === "published");
+      const rows = DEPARTMENTS.map((d) => {
+        const memberCount = accounts.filter((a) => a.role === "member" && a.department === d).length;
+        const skillCount = published.filter((s) => publishedAvailableTo(s, d)).length;
+        const orgWide = published.filter((s) => s.departments.length === 0).length;
+        return `
+          <article class="queue-row">
+            <div class="row-main">
+              <div class="badge-row"><span class="badge published">${icon("building-2")}${esc(d)}</span></div>
+              <h3 style="margin:6px 0 4px">${esc(d)}</h3>
+              <p>${memberCount} member${memberCount === 1 ? "" : "s"} · ${skillCount} published skill${skillCount === 1 ? "" : "s"} visible${orgWide ? ` (incl. ${orgWide} org-wide)` : ""}.</p>
+            </div>
+            <div class="actions">
+              <span class="tag">${icon("users")}${memberCount}</span>
+              <span class="tag">${icon("package")}${skillCount}</span>
+            </div>
+          </article>`;
+      }).join("");
+
+      const empty = DEPARTMENTS.length === 0 || state.mode === "empty";
+
+      return `
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Departments</h2>
+              <p class="muted">Each department scopes which published skills its members can see. Org-wide skills (no department) are visible to everyone.</p>
+            </div>
+            <span class="badge published">${icon("shield-check")}Admin only</span>
+          </div>
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="field full" id="field_dept">
+              <label for="newDept">Add a department</label>
+              <div class="search-line">
+                <input id="newDept" placeholder="e.g. Marketing" style="flex:1 1 220px;border:1px solid var(--line);border-radius:8px;min-height:40px;padding:9px 10px">
+                <button class="primary" data-act="add-dept">${icon("plus")}Add department</button>
+              </div>
+              <div class="help" id="err_dept"></div>
+            </div>
+          </div>
+          ${empty
+            ? `<div class="empty-inline"><div class="state-icon muted">${icon("building-2")}</div><div><h3 style="margin:0 0 4px">No departments yet</h3><p class="muted" style="margin:0">Add a department above to start scoping skills.</p></div></div>`
+            : `<div class="queue-list">${rows}</div>`}
+        </section>`;
+    }
+
+    function addDepartment() {
+      const input = document.getElementById("newDept");
+      const help = document.getElementById("err_dept");
+      const field = document.getElementById("field_dept");
+      const name = input ? input.value.trim() : "";
+      const clearErr = () => { if (field) field.classList.remove("invalid"); if (help) help.textContent = ""; };
+      if (!name) { if (field) field.classList.add("invalid"); if (help) help.textContent = "Enter a department name."; return; }
+      if (DEPARTMENTS.some((d) => d.toLowerCase() === name.toLowerCase())) {
+        if (field) field.classList.add("invalid"); if (help) help.textContent = "That department already exists.";
+        return;
+      }
+      clearErr();
+      DEPARTMENTS.push(name);
+      render();
+      toast(`Added department “${name}”.`, "success");
+    }
+
+    /* ----------------------------------------------------------------------
+       Auth screen (login / register) — shown full-screen while logged out
+    ---------------------------------------------------------------------- */
+    function renderAuth() {
+      const authRoot = document.getElementById("authRoot");
+      const errBlock = state.authError
+        ? `<div class="auth-error">${icon("alert-triangle")}<span>${esc(state.authError)}</span></div>`
+        : "";
+
+      if (state.authPage === "register") {
+        const e = state.authErrors;
+        const rf = state.regForm || { email: "", name: "", department: "" };
+        const deptOpts = ['<option value="">Select your department…</option>']
+          .concat(DEPARTMENTS.map((d) => `<option value="${esc(d)}" ${rf.department === d ? "selected" : ""}>${esc(d)}</option>`)).join("");
+        authRoot.innerHTML = `
+          <div class="auth-screen">
+            <div class="auth-card">
+              <div class="auth-brand"><span class="brand-mark">${icon("shield-check")}</span><span>Skill Hub</span></div>
+              <div class="auth-head"><h2>Create your account</h2><p>Join the internal skill catalog. New accounts are members scoped to a department.</p></div>
+              ${errBlock}
+              <form onsubmit="return false" novalidate>
+                <div class="field ${e.email ? "invalid" : ""}"><label>Work email <span class="req">*</span></label><input id="reg_email" type="email" placeholder="you@skillhub.local" autocomplete="email" value="${esc(rf.email)}"><div class="help">${esc(e.email || "")}</div></div>
+                <div class="field ${e.name ? "invalid" : ""}"><label>Display name <span class="req">*</span></label><input id="reg_name" placeholder="Your name" autocomplete="name" value="${esc(rf.name)}"><div class="help">${esc(e.name || "")}</div></div>
+                <div class="field ${e.password ? "invalid" : ""}"><label>Password <span class="req">*</span></label><input id="reg_password" type="password" placeholder="Choose a password" autocomplete="new-password"><div class="help">${esc(e.password || "")}</div></div>
+                <div class="field ${e.department ? "invalid" : ""}"><label>Department <span class="req">*</span></label><select id="reg_department">${deptOpts}</select><div class="help">${esc(e.department || "")}</div></div>
+                <button class="primary" data-act="register">${icon("user-plus")}Create account</button>
+              </form>
+              <div class="auth-hint">
+                <span>Already have an account? <button class="auth-link" data-act="auth-page" data-id="login">Back to sign in</button></span>
+              </div>
+            </div>
+          </div>`;
+        refreshIcons(authRoot);
+        return;
+      }
+
+      // login (default)
+      authRoot.innerHTML = `
+        <div class="auth-screen">
+          <div class="auth-card">
+            <div class="auth-brand"><span class="brand-mark">${icon("shield-check")}</span><span>Skill Hub</span></div>
+            <div class="auth-head"><h2>Sign in to Skill Hub</h2><p>Internal, access-controlled skill catalog. Sign in to continue.</p></div>
+            ${errBlock}
+            <form onsubmit="return false" novalidate>
+              <div class="field"><label>Email</label><input id="login_email" type="email" placeholder="you@skillhub.local" autocomplete="username"></div>
+              <div class="field"><label>Password</label><input id="login_password" type="password" placeholder="Your password" autocomplete="current-password"></div>
+              <button class="primary" data-act="login">${icon("log-in")}Sign in</button>
+            </form>
+            <div class="auth-hint">
+              <span>Admin login: <code>admin@skillhub.local</code> (any password). <button class="auth-link" data-act="auth-page" data-id="register">Create an account</button></span>
+              <div>
+                <div class="side-label" style="margin:0 0 6px;color:var(--muted)">Demo accounts — one-click sign in</div>
+                <div class="auth-demo-row">
+                  <button class="ghost btn-small" data-act="demo-login" data-id="u-mina">${icon("user")}Mina · member · Engineering</button>
+                  <button class="ghost btn-small" data-act="demo-login" data-id="u-owen">${icon("user")}Owen · member · Design</button>
+                  <button class="ghost btn-small" data-act="demo-login" data-id="u-admin">${icon("shield-check")}Priya · admin</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      refreshIcons(authRoot);
+    }
+
+    function render() {
+      const appRoot = document.getElementById("appRoot");
+      const stateSwitcher = document.querySelector(".state-switcher");
+      const fitNote = document.querySelector(".fit-note");
+      const authRoot = document.getElementById("authRoot");
+
+      // Logged out: hide the whole app shell, show the auth screen.
+      if (!state.user) {
+        appRoot.style.display = "none";
+        if (stateSwitcher) stateSwitcher.style.display = "none";
+        if (fitNote) fitNote.style.display = "none";
+        renderAuth();
+        return;
+      }
+
+      // Logged in: clear the auth screen, show the app.
+      authRoot.innerHTML = "";
+      appRoot.style.display = "";
+      if (stateSwitcher) stateSwitcher.style.display = "";
+      if (fitNote) fitNote.style.display = "";
+
+      renderSidebar();
+      const copy = PAGE_COPY[state.page] || PAGE_COPY.dashboard;
+      title.textContent = copy[0];
+      subtitle.textContent = copy[1];
+
+      document.querySelectorAll("[data-act='mode']").forEach((b) => b.classList.toggle("is-active", b.dataset.id === state.mode));
+
+      if (state.loading) { view.innerHTML = skeleton(); refreshIcons(); return; }
+
+      let html = "";
+      switch (state.page) {
+        case "dashboard": html = renderDashboard(); break;
+        case "queue": html = renderQueue(); break;
+        case "browse": html = renderBrowse(); break;
+        case "mine": html = renderMine(); break;
+        case "submit": html = renderSubmit(); break;
+        case "departments": html = renderDepartments(); break;
+        case "detail": html = renderDetail(); break;
+        default: html = renderBrowse();
+      }
+      view.innerHTML = html;
+      refreshIcons();
+    }
+
+    /* ----------------------------------------------------------------------
+       Event delegation — every interactive element routes through here
+    ---------------------------------------------------------------------- */
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-act]");
+      if (!el) return;
+      const act = el.dataset.act;
+      const id = el.dataset.id;
+
+      switch (act) {
+        case "login": login(); break;
+        case "demo-login": loginAs(id); break;
+        case "register": register(); break;
+        case "logout": logout(); break;
+        case "auth-page": setAuthPage(id); break;
+        case "mode": setMode(id); break;
+        case "nav": setPage(id); break;
+        case "open-detail": openDetail(id, el.dataset.from); if (el.dataset.edit) { state.detailEdit = true; render(); } break;
+        case "back": setPage(state.detailFrom || NAV[state.role][0].page); break;
+        case "copy": copyCommand(el.dataset.cmd, el); break;
+        case "source": openSource(el.dataset.src); break;
+        case "publish": publishSkill(id); break;
+        case "reject": rejectSkill(id); break;
+        case "feature": toggleFeature(id); break;
+        case "unpublish": unpublishSkill(id); break;
+        case "toggle-dept": toggleDept(id, el.dataset.dept); break;
+        case "add-dept": addDepartment(); break;
+        case "resubmit": resubmitSkill(id); break;
+        case "edit": state.detailEdit = true; render(); break;
+        case "cancel-edit": state.detailEdit = false; render(); break;
+        case "save-edit": saveEdit(id); break;
+        case "submit": submitForm(); break;
+        case "category": state.category = id; render(); break;
+        case "trust": state.trust = state.trust === "featured" ? "all" : "featured"; render(); break;
+        case "reset-filters": state.search = ""; state.category = "All"; state.trust = "all"; render(); break;
+        case "queue-filter": state.queueFilter = id; render(); break;
+        case "show-rules": showRules(); break;
+        case "dismiss-toast": { const n = document.getElementById(id); if (n) n.remove(); break; }
+        case "modal-backdrop": if (e.target === el) closeModal(); break;
+        case "close-modal": closeModal(); break;
+        case "confirm-modal": confirmModal(); break;
+      }
+    });
+
+    document.addEventListener("input", (e) => {
+      if (e.target.matches("[data-input='search']")) {
+        state.search = e.target.value;
+        const box = document.getElementById("browseResults");
+        if (box) { box.innerHTML = browseResultsHTML(); refreshIcons(); }
+        const count = document.getElementById("browseCount");
+        if (count) {
+          let l = publishedForViewer();
+          if (state.category !== "All") l = l.filter((s) => s.category === state.category);
+          if (state.trust === "featured") l = l.filter((s) => s.featured);
+          const q = state.search.trim().toLowerCase();
+          if (q) l = l.filter((s) => (s.name + " " + s.summary + " " + s.tags.join(" ") + " " + s.author).toLowerCase().includes(q));
+          const total = publishedForViewer().length;
+          count.textContent = `${l.length} of ${total} published skill${total === 1 ? "" : "s"}`;
+        }
+      }
+    });
+
+    document.addEventListener("change", (e) => {
+      if (e.target.matches("[data-change='sort']")) { state.sort = e.target.value; render(); }
+      if (e.target.matches("[data-change='demo-switch']")) { loginAs(e.target.value); }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modalConfirm) closeModal();
+      // Enter submits the auth forms while logged out (no modal open).
+      if (e.key === "Enter" && !state.user && !modalConfirm) {
+        const inAuth = e.target.closest && e.target.closest(".auth-card");
+        if (inAuth) { e.preventDefault(); state.authPage === "register" ? register() : login(); }
+      }
+    });
+
+    function confirmModal() {
+      if (!modalConfirm) return;
+      const fn = modalConfirm.onConfirm;
+      if (modalConfirm.needsReason) {
+        const ta = document.getElementById("modalReason");
+        const reason = ta ? ta.value.trim() : "";
+        if (!reason) { const err = document.getElementById("modalErr"); if (err) err.textContent = "A reason is required."; return; }
+        closeModal();
+        fn(reason);
+      } else {
+        closeModal();
+        fn();
+      }
+    }
+
+    function showRules() {
+      openModal({
+        title: "Lifecycle & permission rules",
+        body: "Members see published skills available to their department (org-wide skills are visible to everyone) plus their own submissions, and can edit only their own drafts or rejected records. Admins publish pending or unpublished skills, reject pending skills, feature/unfeature published skills, unpublish published skills, and assign published skills to departments. Publish, reject, feature, unpublish, and department-assign actions are idempotent, so repeated clicks never create duplicates.",
+        confirmLabel: "Got it",
+        confirmKind: "primary",
+        onConfirm: () => {}
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
