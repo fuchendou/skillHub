@@ -15,7 +15,7 @@ const TABS = ["pending", "published", "rejected", "unpublished", "all"] as const
 type Tab = (typeof TABS)[number];
 
 export default function ReviewPage() {
-  const { role } = useAuth();
+  const { ready, role } = useAuth();
   const [tab, setTab] = useState<Tab>("pending");
 
   const query = useQuery({
@@ -24,13 +24,13 @@ export default function ReviewPage() {
     enabled: role === "admin",
   });
 
+  if (!ready) return <Spinner label="Loading session..." />;
+
   if (role !== "admin") {
     return (
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-zinc-100">Review queue</h2>
-        <p className="text-sm text-zinc-400">
-          Admins only. Use the “Admin” switch in the sidebar to view the queue.
-        </p>
+        <p className="text-sm text-zinc-400">Admin access is required.</p>
       </div>
     );
   }
@@ -39,9 +39,7 @@ export default function ReviewPage() {
     <div className="space-y-6">
       <header>
         <h2 className="text-2xl font-semibold text-zinc-100">Review queue</h2>
-        <p className="mt-1 text-sm text-zinc-400">
-          Publish, reject, feature, or unpublish submissions. Actions are idempotent and safe to retry.
-        </p>
+        <p className="mt-1 text-sm text-zinc-400">Review pending submissions and curate published skills.</p>
       </header>
 
       <div className="flex gap-1 border-b border-zinc-800">
@@ -51,9 +49,7 @@ export default function ReviewPage() {
             onClick={() => setTab(t)}
             className={clsx(
               "px-3 py-2 text-sm font-medium capitalize transition",
-              tab === t
-                ? "border-b-2 border-sky-500 text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-300",
+              tab === t ? "border-b-2 border-sky-500 text-zinc-100" : "text-zinc-500 hover:text-zinc-300",
             )}
           >
             {t}
@@ -76,17 +72,13 @@ export default function ReviewPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Link
-                      href={`/review/${skill.id}`}
-                      className="font-medium text-zinc-100 hover:text-sky-300"
-                    >
+                    <Link href={`/review/${skill.id}`} className="font-medium text-zinc-100 hover:text-sky-300">
                       {skill.name}
                     </Link>
-                    {skill.is_featured && <span title="Featured">⭐</span>}
+                    {skill.is_featured && <span title="Featured">Featured</span>}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-zinc-500">
-                    {skill.category.name} · by {skill.owner.display_name}
-                    {skill.risk_label ? ` · ${skill.risk_label}` : ""}
+                    {skill.category.name} / {skill.owner.display_name}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm text-zinc-400">{skill.summary}</p>
                 </div>

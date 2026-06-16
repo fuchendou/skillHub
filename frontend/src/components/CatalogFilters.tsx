@@ -28,7 +28,7 @@ export function CatalogFilters({
       <input
         value={state.q}
         onChange={(e) => onChange({ q: e.target.value })}
-        placeholder="Search skills…"
+        placeholder="Search skills..."
         className={`${inputCls} min-w-[200px] flex-1`}
         aria-label="Search skills"
       />

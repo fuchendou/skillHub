@@ -52,6 +52,13 @@ class Skill(Base):
     owner = relationship("User", lazy="selectin")
     category = relationship("Category", lazy="selectin")
     tags = relationship("Tag", secondary="skill_tag", lazy="selectin", order_by="Tag.name")
+    departments = relationship(
+        "Department",
+        secondary="skill_department",
+        back_populates="skills",
+        lazy="selectin",
+        order_by="Department.name",
+    )
 
 
 # Case-insensitive unique indexes (schema.md: skill_name_uniq, skill_source_uniq).

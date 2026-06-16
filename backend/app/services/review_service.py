@@ -18,8 +18,8 @@ from app.repositories import skill_repository as skill_repo
 from app.services import support
 
 # Source statuses each action is legal from (api.md §9.3).
-PUBLISHABLE_FROM = {"draft", "pending", "unpublished", "rejected"}
-REJECTABLE_FROM = {"pending", "draft"}
+PUBLISHABLE_FROM = {"pending", "unpublished"}
+REJECTABLE_FROM = {"pending"}
 RESUBMITTABLE_FROM = {"rejected", "draft"}
 
 

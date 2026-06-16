@@ -61,9 +61,13 @@ A single repo with two deployable apps and shared infra config:
 
 ```
 skillHub/
-├── spec.md  schema.md  api.md  implement.md   # the source-of-truth docs
-├── docker-compose.yml                         # postgres + backend + frontend for local dev
-├── .env.example                               # every env var, documented
+├── README.md
+├── docs/
+│   ├── spec.md  schema.md  api.md  implement.md  discovery.md
+│   └── prototypes/
+├── docker/
+│   └── docker-compose.yml                     # postgres + backend + frontend for local dev
+├── .env.example                               # every env var, documented when present
 │
 ├── backend/
 │   ├── pyproject.toml                         # deps managed with uv / poetry
@@ -80,7 +84,8 @@ skillHub/
 │       │   ├── base.py                        # async engine + session factory
 │       │   └── session.py                     # get_session() dependency
 │       ├── models/                            # SQLAlchemy ORM — one file per schema.md entity
-│       │   ├── user.py  skill.py  category.py  tag.py  skill_tag.py  review_action.py
+│       │   ├── user.py  department.py  skill.py  category.py  tag.py
+│       │   ├── skill_tag.py  skill_department.py  review_action.py
 │       │   ├── refresh_token.py  idempotency_key.py
 │       ├── schemas/                           # Pydantic request/response models (the api.md shapes)
 │       │   ├── auth.py  skill.py  category.py  tag.py  user.py  common.py
@@ -624,7 +629,7 @@ Seeding is idempotent (`ON CONFLICT DO NOTHING`), so it is safe to re-run.
 | Concern | Choice | Notes |
 | --- | --- | --- |
 | Framework | Next.js App Router + React + TypeScript | Server Components for fast first paint of the authenticated catalog |
-| Styling | Tailwind CSS | Matches the dense "command center" layout of `prototypes/version/prototypes-v1.html` |
+| Styling | Tailwind CSS | Matches the dense production command-center layout of `docs/prototypes/version/prototypes-v2.html` |
 | Server state | TanStack Query (React Query) | Caching, invalidation after lifecycle actions, idempotency-friendly mutations |
 | Forms | React Hook Form + Zod | Field-level validation mirroring `schema.md` (§5.5) |
 | API client | typed `fetch` wrapper in `lib/api/` | One function per `api.md` endpoint, returns `{ data }` or throws a typed `ApiError` |
@@ -646,6 +651,7 @@ src/app/
 │   ├── page.tsx                   # admin review queue — GET /skill?status=pending&sort=name
 │   └── [id]/page.tsx              # admin skill review + publish/reject/feature/unpublish + assign departments
 ├── departments/page.tsx           # admin: manage departments (CRUD /department) — guarded: admin
+├── members/page.tsx               # admin: manage member role, department, and active state — guarded: admin
 └── loading.tsx / error.tsx / not-found.tsx   # the loading/error/empty states spec.md §4 requires
 ```
 
@@ -804,7 +810,7 @@ Secrets (`JWT_SECRET`, DB password) come from the deploy environment / secret ma
 ### 6.3 Local development with Docker Compose
 
 ```yaml
-# docker-compose.yml  (abridged)
+# docker/docker-compose.yml  (abridged)
 services:
   db:
     image: postgres:16
@@ -824,14 +830,15 @@ services:
     ports: ["3000:3000"]
 ```
 
-`docker compose up` brings up Postgres, runs migrations, starts FastAPI with autoreload, and serves
+From the repository root, `docker compose -f docker/docker-compose.yml --project-directory . up`
+brings up Postgres, runs migrations, starts FastAPI with autoreload, and serves
 the Next.js dev server. Visit `http://localhost:3000` for the app and `http://localhost:8000/docs`
 for FastAPI's auto-generated OpenAPI explorer (useful for verifying the `api.md` contract).
 
-> The existing static prototype at `prototypes/version/prototypes-v1.html` remains the **design
-> reference** for the command-center layout and interactions. This stack reproduces that single-file
-> prototype as the real three-tier app while preserving its behavior (login/registration, the
-> department-scoped catalog, admin department assignment, full interactivity).
+> The static prototype at `docs/prototypes/version/prototypes-v2.html` is the current **production
+> prototype reference** for the command-center layout and interactions. The earlier
+> `docs/prototypes/version/prototypes-v1.html` and the audit notes under `docs/prototypes/audit-v1/`
+> remain useful as design history, not as the target implementation surface.
 
 ---
 

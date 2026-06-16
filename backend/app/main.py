@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
 from app.core.errors import AppError
-from app.routers import auth, category, skill, skill_lifecycle, tag, user
+from app.routers import auth, category, department, skill, skill_lifecycle, tag, user
 
 
 def _error_body(code: str, message: str, details: list | None = None) -> dict:
@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
         allow_credentials=True,
     )
@@ -61,7 +61,7 @@ def create_app() -> FastAPI:
     async def health() -> dict:
         return {"status": "ok"}
 
-    for router_module in (auth, skill, skill_lifecycle, category, tag, user):
+    for router_module in (auth, skill, skill_lifecycle, category, tag, department, user):
         app.include_router(router_module.router, prefix=settings.api_prefix)
 
     return app

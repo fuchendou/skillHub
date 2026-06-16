@@ -1,6 +1,6 @@
 # Skill Hub — Data Model (`schema.md`)
 
-Data model for the Skill Hub v1 described in [`spec.md`](spec.md) and realized in the direction-2 "Review Command Center" prototype. The HTTP surface that exposes this model is defined in [`api.md`](api.md); entity and field names used here are referenced verbatim there.
+Data model for the Skill Hub v1 described in [`spec.md`](spec.md) and reflected in the current production prototype at `docs/prototypes/version/prototypes-v2.html`. The HTTP surface that exposes this model is defined in [`api.md`](api.md); entity and field names used here are referenced verbatim there.
 
 ## Conventions
 
@@ -284,7 +284,7 @@ Unauthenticated requests are not a role and have no `user` row; they can reach o
 | `skill_status_featured_idx` | `skill` | (`status`, `is_featured`) | btree | Catalog "featured only" listing |
 | `skill_status_category_idx` | `skill` | (`status`, `category_id`) | btree | Browse published skills by category |
 | `skill_owner_idx` | `skill` | `owner_id` | btree | Member "My submissions" listing |
-| `skill_published_at_idx` | `skill` | `published_at DESC` | btree | "Newest" sort on the public catalog |
+| `skill_published_at_idx` | `skill` | `published_at DESC` | btree | "Newest" sort on the authenticated member catalog |
 | `skill_search_ft` | `skill` | (`name`, `summary`) | full-text / GIN | Keyword search |
 | `skill_tag_pk` | `skill_tag` | (`skill_id`, `tag_id`) | unique (PK) | Pair uniqueness / skill→tags lookup |
 | `skill_tag_tag_idx` | `skill_tag` | `tag_id` | btree | "Skills by tag" reverse lookup |

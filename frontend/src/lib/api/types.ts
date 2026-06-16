@@ -1,6 +1,6 @@
 // TypeScript mirror of the api.md response shapes.
 
-export type Role = "visitor" | "creator" | "admin";
+export type Role = "member" | "admin";
 export type SkillStatus = "draft" | "pending" | "published" | "rejected" | "unpublished";
 
 export interface Ref {
@@ -8,6 +8,8 @@ export interface Ref {
   name: string;
   slug: string;
 }
+
+export type Department = Ref;
 
 export interface UserRef {
   id: string;
@@ -28,7 +30,8 @@ export interface Skill {
   rejection_reason: string | null;
   category: Ref;
   owner: UserRef;
-  tag: Ref[];
+  tags: Ref[];
+  departments: Department[];
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -61,8 +64,19 @@ export interface ReviewAction {
 export interface AuthUser {
   id: string;
   display_name: string;
-  role: Exclude<Role, "visitor">;
+  role: Role;
+  department: Department | null;
   email?: string;
+}
+
+export interface UserAdmin {
+  id: string;
+  email: string;
+  display_name: string;
+  role: Role;
+  department: Department | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface TokenBundle {

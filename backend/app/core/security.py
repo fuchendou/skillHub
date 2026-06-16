@@ -1,6 +1,8 @@
 """JWT issuing/verification and argon2 password hashing (api.md §3, schema.md ``password_hash``)."""
 from __future__ import annotations
 
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -37,9 +39,14 @@ def make_access_token(user_id: str, role: str) -> str:
     return _encode({"sub": user_id, "role": role, "type": "access"}, settings.access_token_ttl_seconds)
 
 
-def make_refresh_token(user_id: str) -> str:
-    """Long-lived token exchanged at POST /auth/refresh."""
-    return _encode({"sub": user_id, "type": "refresh"}, settings.refresh_token_ttl_seconds)
+def make_refresh_token() -> str:
+    """Long-lived opaque token exchanged at POST /auth/refresh."""
+    return f"rft_{secrets.token_urlsafe(32)}"
+
+
+def hash_refresh_token(raw: str) -> str:
+    """Deterministic hash for refresh-token lookup; the raw token is never stored."""
+    return hashlib.sha256(f"{settings.jwt_secret}:{raw}".encode("utf-8")).hexdigest()
 
 
 def decode_token(token: str) -> dict[str, Any]:

@@ -40,20 +40,36 @@ def upgrade() -> None:
     sa.UniqueConstraint('name'),
     sa.UniqueConstraint('slug')
     )
+    op.create_table('department',
+    sa.Column('id', sa.String(length=36), nullable=False),
+    sa.Column('name', sa.String(length=80), nullable=False),
+    sa.Column('slug', sa.String(length=80), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name'),
+    sa.UniqueConstraint('slug')
+    )
+    op.create_index('department_name_uniq', 'department', [sa.literal_column('lower(name)')], unique=True)
+    op.create_index('department_slug_uniq', 'department', ['slug'], unique=True)
     op.create_table('user',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
     sa.Column('display_name', sa.String(length=80), nullable=False),
-    sa.Column('role', sa.Enum('creator', 'admin', name='userrole', native_enum=False, length=20), nullable=False),
+    sa.Column('role', sa.Enum('member', 'admin', name='userrole', native_enum=False, length=20), server_default='member', nullable=False),
+    sa.Column('department_id', sa.String(length=36), nullable=True),
     sa.Column('bio', sa.String(length=280), nullable=True),
     sa.Column('avatar_url', sa.String(length=500), nullable=True),
     sa.Column('is_active', sa.Boolean(), server_default='true', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['department_id'], ['department.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
+    op.create_index('user_department_idx', 'user', ['department_id'], unique=False)
+    op.create_index('user_role_idx', 'user', ['role'], unique=False)
     op.create_table('skill',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('name', sa.String(length=120), nullable=False),
@@ -90,13 +106,34 @@ def upgrade() -> None:
         "USING GIN (to_tsvector('english', name || ' ' || summary))"
     )
     op.create_table('idempotency_key',
-    sa.Column('key', sa.String(length=255), nullable=False),
-    sa.Column('actor_id', sa.String(length=36), nullable=True),
+    sa.Column('id', sa.String(length=36), nullable=False),
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('key', sa.String(length=80), nullable=False),
+    sa.Column('request_fingerprint', sa.String(length=64), nullable=False),
+    sa.Column('response_status', sa.Integer(), nullable=False),
+    sa.Column('response_body', sa.JSON(), nullable=True),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('skill_id', sa.String(length=36), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['skill_id'], ['skill.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('key')
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'key', name='idempotency_key_user_key_uniq')
     )
+    op.create_index('idempotency_key_expiry_idx', 'idempotency_key', ['expires_at'], unique=False)
+    op.create_table('refresh_token',
+    sa.Column('id', sa.String(length=36), nullable=False),
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('token_hash', sa.String(length=255), nullable=False),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('revoked_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('token_hash')
+    )
+    op.create_index('refresh_token_hash_uniq', 'refresh_token', ['token_hash'], unique=True)
+    op.create_index('refresh_token_user_idx', 'refresh_token', ['user_id', 'expires_at'], unique=False)
     op.create_table('review_action',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('skill_id', sa.String(length=36), nullable=False),
@@ -122,18 +159,33 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('skill_id', 'tag_id')
     )
     op.create_index('skill_tag_tag_idx', 'skill_tag', ['tag_id'], unique=False)
+    op.create_table('skill_department',
+    sa.Column('skill_id', sa.String(length=36), nullable=False),
+    sa.Column('department_id', sa.String(length=36), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['department_id'], ['department.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['skill_id'], ['skill.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('skill_id', 'department_id')
+    )
+    op.create_index('skill_department_dept_idx', 'skill_department', ['department_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.execute("DROP INDEX IF EXISTS skill_search_ft")
+    op.drop_index('skill_department_dept_idx', table_name='skill_department')
+    op.drop_table('skill_department')
     op.drop_index('skill_tag_tag_idx', table_name='skill_tag')
     op.drop_table('skill_tag')
     op.drop_index('review_action_skill_idx', table_name='review_action')
     op.drop_index('review_action_created_idx', table_name='review_action')
     op.drop_index('review_action_actor_idx', table_name='review_action')
     op.drop_table('review_action')
+    op.drop_index('refresh_token_user_idx', table_name='refresh_token')
+    op.drop_index('refresh_token_hash_uniq', table_name='refresh_token')
+    op.drop_table('refresh_token')
+    op.drop_index('idempotency_key_expiry_idx', table_name='idempotency_key')
     op.drop_table('idempotency_key')
     op.drop_index('skill_status_idx', table_name='skill')
     op.drop_index('skill_status_featured_idx', table_name='skill')
@@ -143,7 +195,12 @@ def downgrade() -> None:
     op.drop_index('skill_owner_idx', table_name='skill')
     op.drop_index('skill_name_uniq', table_name='skill')
     op.drop_table('skill')
+    op.drop_index('user_role_idx', table_name='user')
+    op.drop_index('user_department_idx', table_name='user')
     op.drop_table('user')
+    op.drop_index('department_slug_uniq', table_name='department')
+    op.drop_index('department_name_uniq', table_name='department')
+    op.drop_table('department')
     op.drop_table('tag')
     op.drop_table('category')
     # ### end Alembic commands ###

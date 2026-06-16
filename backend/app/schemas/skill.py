@@ -11,6 +11,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.category import CategoryRef
+from app.schemas.department import DepartmentRef
 from app.schemas.tag import TagRef
 from app.schemas.user import UserRef
 
@@ -21,7 +22,7 @@ class SkillCreate(BaseModel):
     category_id: str
     install_command: str = Field(min_length=1, max_length=255)
     source_url: str = Field(min_length=1, max_length=500)
-    tag: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     usage_note: str | None = Field(default=None, max_length=5000)
     draft: bool = False
 
@@ -31,12 +32,16 @@ class SkillUpdate(BaseModel):
     category_id: str | None = None
     install_command: str | None = Field(default=None, min_length=1, max_length=255)
     source_url: str | None = Field(default=None, min_length=1, max_length=500)
-    tag: list[str] | None = None
+    tags: list[str] | None = None
     usage_note: str | None = Field(default=None, max_length=5000)
 
 
 class RejectRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
+
+
+class DepartmentAssignmentRequest(BaseModel):
+    department_ids: list[str] = Field(default_factory=list)
 
 
 class SkillOut(BaseModel):
@@ -55,8 +60,8 @@ class SkillOut(BaseModel):
     rejection_reason: str | None = None
     category: CategoryRef
     owner: UserRef
-    # ORM attribute is ``tags``; the public key is the singular ``tag`` (api.md §9.2).
-    tags: list[TagRef] = Field(default_factory=list, serialization_alias="tag")
+    departments: list[DepartmentRef] = Field(default_factory=list)
+    tags: list[TagRef] = Field(default_factory=list)
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime

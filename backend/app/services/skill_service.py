@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import errors
 from app.core.pagination import PageParams
-from app.models import Category, Skill, SkillStatus, Tag
+from app.models import Category, Department, Skill, SkillStatus, Tag
 from app.models.skill import INSTALL_COMMAND_REGEX
 from app.repositories import skill_repository as skill_repo
 from app.services import support
@@ -22,13 +22,13 @@ _INSTALL_RE = re.compile(INSTALL_COMMAND_REGEX)
 
 
 def visible(skill: Skill, user) -> bool:
-    if skill.status == "published":
-        return True
-    if user is None:
-        return False
     if user.role == "admin":
         return True
-    return skill.owner_id == user.id
+    if skill.owner_id == user.id:
+        return True
+    if skill.status == "published":
+        return not skill.departments or any(d.id == user.department_id for d in skill.departments)
+    return False
 
 
 async def _ensure_unique_name(session: AsyncSession, name: str, exclude_id: str | None = None) -> None:
@@ -75,7 +75,7 @@ async def create_skill(session: AsyncSession, data, owner, idempotency_key: str 
     await _ensure_unique_source(session, data.source_url)
 
     slug = await support.unique_slug(session, Skill, data.name, max_len=140)
-    tags = await resolve_tags(session, data.tag)
+    tags = await resolve_tags(session, data.tags)
     status = SkillStatus.draft if data.draft else SkillStatus.pending
     skill = Skill(
         name=data.name,
@@ -114,7 +114,7 @@ async def update_skill(session: AsyncSession, skill_id: str, data, user) -> Skil
         if skill.owner_id != user.id:
             raise errors.not_owner()
         if skill.status not in ("draft", "rejected"):
-            raise errors.forbidden_role()  # creators may edit only their draft/rejected skills
+            raise errors.forbidden_role()  # members may edit only their draft/rejected skills
 
     if data.install_command is not None:
         if not _INSTALL_RE.match(data.install_command):
@@ -132,8 +132,8 @@ async def update_skill(session: AsyncSession, skill_id: str, data, user) -> Skil
         skill.summary = data.summary
     if data.usage_note is not None:
         skill.usage_note = data.usage_note
-    if data.tag is not None:
-        skill.tags = await resolve_tags(session, data.tag)
+    if data.tags is not None:
+        skill.tags = await resolve_tags(session, data.tags)
 
     support.record_action(
         session, skill=skill, actor_id=user.id, action="edit",
@@ -167,3 +167,38 @@ async def get_skill_visible(session: AsyncSession, id_or_slug: str, user) -> Ski
 
 async def list_skills(session: AsyncSession, *, user, params: PageParams, **filters) -> tuple[list[Skill], int]:
     return await skill_repo.list_skills(session, user=user, params=params, **filters)
+
+
+async def assign_departments(
+    session: AsyncSession,
+    skill_id: str,
+    department_ids: list[str],
+    actor,
+    idempotency_key: str | None = None,
+) -> Skill:
+    if sid := await support.replay(session, idempotency_key):
+        return await skill_repo.get_loaded(session, sid)
+    skill = await skill_repo.get_loaded(session, skill_id)
+    if skill is None:
+        raise errors.not_found("SKILL_NOT_FOUND", "No skill with that id.")
+    if skill.status != "published":
+        raise errors.invalid_state_transition("Department assignment is only allowed for published skills.")
+
+    unique_ids = list(dict.fromkeys(department_ids))
+    if unique_ids:
+        rows = (await session.execute(select(Department).where(Department.id.in_(unique_ids)))).scalars().all()
+        by_id = {d.id: d for d in rows}
+        missing = [dept_id for dept_id in unique_ids if dept_id not in by_id]
+        if missing:
+            raise errors.not_found("DEPARTMENT_NOT_FOUND", "No department with that id.")
+        skill.departments = [by_id[dept_id] for dept_id in unique_ids]
+    else:
+        skill.departments = []
+
+    await support.remember(session, idempotency_key, actor.id, skill.id)
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise support.map_integrity_error(exc)
+    return await skill_repo.get_loaded(session, skill.id)

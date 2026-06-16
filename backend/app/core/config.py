@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://skill:skill@localhost:5432/skillhub"
 
     # --- Auth (api.md §3) ---
-    jwt_secret: str = "dev-secret-change-me"
+    jwt_secret: str = "dev-secret-key-at-least-32-bytes-long"
     jwt_algorithm: str = "HS256"
     access_token_ttl_seconds: int = 900        # 15 minutes
     refresh_token_ttl_seconds: int = 2_592_000  # 30 days

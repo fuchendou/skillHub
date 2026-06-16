@@ -74,3 +74,11 @@ def duplicate(code: str, message: str) -> AppError:
 
 def invalid_state_transition(message: str) -> AppError:
     return AppError("INVALID_STATE_TRANSITION", 409, message)
+
+
+def resource_in_use(message: str) -> AppError:
+    return AppError("RESOURCE_IN_USE", 409, message)
+
+
+def idempotency_key_conflict() -> AppError:
+    return AppError("IDEMPOTENCY_KEY_CONFLICT", 409, "Idempotency-Key was reused with a different request.")

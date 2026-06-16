@@ -10,6 +10,6 @@ import { useAuth } from "@/lib/auth/AuthProvider";
  */
 export function RoleGate({ allow, children }: { allow: Role[]; children: React.ReactNode }) {
   const { role } = useAuth();
-  if (!allow.includes(role)) return null;
+  if (!role || !allow.includes(role)) return null;
   return <>{children}</>;
 }

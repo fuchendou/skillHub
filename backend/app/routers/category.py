@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import parse_page_params
 from app.core.responses import data_envelope, paged_envelope
 from app.db.session import get_session
-from app.deps.auth import require_admin
+from app.deps.auth import require_admin, require_member
 from app.schemas.category import CategoryCreate, CategoryOut, CategoryUpdate
 from app.services import category_service
 
@@ -16,7 +16,10 @@ router = APIRouter(tags=["category"])
 
 @router.get("/category")
 async def list_categories(
-    session: AsyncSession = Depends(get_session), page: int = 1, limit: int = 20
+    session: AsyncSession = Depends(get_session),
+    _=Depends(require_member),
+    page: int = 1,
+    limit: int = 20,
 ):
     params = parse_page_params(page, limit)
     rows, total = await category_service.list_categories(session, params)
@@ -24,7 +27,11 @@ async def list_categories(
 
 
 @router.get("/category/{id_or_slug}")
-async def get_category(id_or_slug: str, session: AsyncSession = Depends(get_session)):
+async def get_category(
+    id_or_slug: str,
+    session: AsyncSession = Depends(get_session),
+    _=Depends(require_member),
+):
     cat = await category_service.get_category(session, id_or_slug)
     return data_envelope(CategoryOut.model_validate(cat))
 

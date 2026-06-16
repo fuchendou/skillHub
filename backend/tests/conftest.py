@@ -18,7 +18,7 @@ from app.core import security
 from app.db.base import Base
 from app.db.session import get_session
 from app.main import app
-from app.models import Category, User
+from app.models import Category, Department, User
 from app.services.support import role_str
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///./_pytest.db")
@@ -56,10 +56,30 @@ async def client(sm):
     app.dependency_overrides.clear()
 
 
-async def _make_user(sm, email: str, name: str, role: str, password: str = "pw-123456") -> User:
+async def _make_department(sm, name: str, slug: str) -> Department:
+    async with sm() as session:
+        dept = Department(name=name, slug=slug)
+        session.add(dept)
+        await session.commit()
+        await session.refresh(dept)
+        return dept
+
+
+async def _make_user(
+    sm,
+    email: str,
+    name: str,
+    role: str,
+    password: str = "pw-123456",
+    department: Department | None = None,
+) -> User:
     async with sm() as session:
         user = User(
-            email=email, display_name=name, role=role, password_hash=security.hash_password(password)
+            email=email,
+            display_name=name,
+            role=role,
+            department_id=department.id if department else None,
+            password_hash=security.hash_password(password),
         )
         session.add(user)
         await session.commit()
@@ -73,13 +93,23 @@ async def admin(sm) -> User:
 
 
 @pytest_asyncio.fixture
-async def creator(sm) -> User:
-    return await _make_user(sm, "creator@test.test", "Creator Cleo", "creator")
+async def department(sm) -> Department:
+    return await _make_department(sm, "Engineering", "engineering")
 
 
 @pytest_asyncio.fixture
-async def other_creator(sm) -> User:
-    return await _make_user(sm, "other@test.test", "Other Otto", "creator")
+async def other_department(sm) -> Department:
+    return await _make_department(sm, "Product", "product")
+
+
+@pytest_asyncio.fixture
+async def member(sm, department) -> User:
+    return await _make_user(sm, "member@test.test", "Member Mina", "member", department=department)
+
+
+@pytest_asyncio.fixture
+async def other_member(sm, other_department) -> User:
+    return await _make_user(sm, "other@test.test", "Other Omar", "member", department=other_department)
 
 
 @pytest_asyncio.fixture
@@ -104,7 +134,7 @@ def skill_payload(category_id: str, **overrides) -> dict:
         "category_id": category_id,
         "install_command": "codex skill install mina/schema-drift-watcher",
         "source_url": "github.com/mina/schema-drift-watcher",
-        "tag": ["database"],
+        "tags": ["database"],
     }
     body.update(overrides)
     return body

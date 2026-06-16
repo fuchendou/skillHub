@@ -6,7 +6,7 @@ export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex items-center gap-3 text-sm text-zinc-400" role="status">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-200" />
-      {label ?? "Loading…"}
+      {label ?? "Loading..."}
     </div>
   );
 }

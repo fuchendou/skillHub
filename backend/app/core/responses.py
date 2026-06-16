@@ -1,7 +1,7 @@
 """Helpers that render the api.md §5 success envelopes.
 
 Returning plain dicts (already JSON-mode dumped with ``by_alias=True``) guarantees the public
-key names from api.md — notably the singular ``tag`` array on a skill.
+key names from api.md.
 """
 from __future__ import annotations
 

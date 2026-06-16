@@ -11,8 +11,8 @@ export function ReviewActionLog({ skillId }: { skillId: string }) {
     queryFn: () => reviewActions(skillId),
   });
 
-  if (isPending) return <Spinner label="Loading history…" />;
-  if (isError) return <p className="text-sm text-rose-300">Couldn&apos;t load the action history.</p>;
+  if (isPending) return <Spinner label="Loading history..." />;
+  if (isError) return <p className="text-sm text-rose-300">Could not load the action history.</p>;
   if (data.length === 0) return <p className="text-sm text-zinc-500">No actions recorded yet.</p>;
 
   return (
@@ -24,13 +24,13 @@ export function ReviewActionLog({ skillId }: { skillId: string }) {
             {a.from_status && (
               <span className="text-xs text-zinc-500">
                 {" "}
-                · {a.from_status} → {a.to_status}
+                / {a.from_status} to {a.to_status}
               </span>
             )}
-            {a.reason && <p className="mt-0.5 text-xs italic text-zinc-500">“{a.reason}”</p>}
+            {a.reason && <p className="mt-0.5 text-xs italic text-zinc-500">"{a.reason}"</p>}
           </div>
           <div className="shrink-0 text-right text-[11px] text-zinc-500">
-            <div>{a.actor?.display_name ?? "—"}</div>
+            <div>{a.actor?.display_name ?? "-"}</div>
             <div>{new Date(a.created_at).toLocaleString()}</div>
           </div>
         </li>

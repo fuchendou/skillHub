@@ -19,7 +19,7 @@ export interface SkillInput {
   category_id: string;
   install_command: string;
   source_url: string;
-  tag: string[];
+  tags: string[];
   usage_note?: string;
 }
 
@@ -55,7 +55,15 @@ export async function updateSkill(id: string, input: Partial<SkillInput>): Promi
   return body.data;
 }
 
-// --- Lifecycle actions (each carries a fresh Idempotency-Key, api.md §4) ---
+export async function assignSkillDepartments(id: string, departmentIds: string[]): Promise<Skill> {
+  const body = await request<{ data: Skill }>(`/skill/${id}/departments`, {
+    method: "PUT",
+    body: { department_ids: departmentIds },
+    idempotencyKey: newIdempotencyKey(),
+  });
+  return body.data;
+}
+
 async function action(id: string, verb: string, method = "POST", body?: unknown): Promise<Skill> {
   const res = await request<{ data: Skill }>(`/skill/${id}/${verb}`, {
     method,

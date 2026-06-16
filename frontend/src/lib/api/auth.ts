@@ -9,6 +9,20 @@ export async function login(email: string, password: string): Promise<TokenBundl
   return body.data;
 }
 
+export async function registerMember(input: {
+  email: string;
+  password: string;
+  display_name: string;
+  department_id: string;
+}): Promise<AuthUser> {
+  const body = await request<{ data: AuthUser }>("/auth/register", {
+    method: "POST",
+    body: input,
+    auth: false,
+  });
+  return body.data;
+}
+
 export async function fetchMe(): Promise<AuthUser> {
   const body = await request<{ data: AuthUser }>("/auth/me", { method: "GET" });
   return body.data;

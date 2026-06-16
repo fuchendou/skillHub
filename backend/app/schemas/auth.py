@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.department import DepartmentRef
+
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -20,6 +22,7 @@ class RegisterRequest(BaseModel):
     email: str
     password: str = Field(min_length=8, max_length=72)
     display_name: str = Field(min_length=2, max_length=80)
+    department_id: str
 
     _norm_email = field_validator("email")(_validate_email)
 
@@ -40,6 +43,7 @@ class UserBrief(BaseModel):
     id: str
     display_name: str
     role: str
+    department: DepartmentRef | None = None
 
 
 class RegisteredUser(BaseModel):
@@ -48,6 +52,7 @@ class RegisteredUser(BaseModel):
     email: str
     display_name: str
     role: str
+    department: DepartmentRef
     created_at: datetime
 
 

@@ -1,4 +1,4 @@
-"""Auth dependencies — the visitor / creator / admin tiers from api.md §3.
+"""Auth dependencies — the unauthenticated / member / admin tiers from api.md §3.
 
 Each protected endpoint declares its tier inline via ``Depends(...)``, matching the
 **Auth** column of api.md §9.
@@ -27,7 +27,7 @@ async def optional_user(
     authorization: str | None = Header(default=None),
     session: AsyncSession = Depends(get_session),
 ) -> User | None:
-    """Visitor tier: returns ``None`` for missing/invalid tokens — never raises (api.md §3)."""
+    """Public-route helper: returns ``None`` for missing/invalid tokens — never raises."""
     token = _extract_bearer(authorization)
     if not token:
         return None
@@ -47,7 +47,7 @@ async def get_current_user(
     authorization: str | None = Header(default=None),
     session: AsyncSession = Depends(get_session),
 ) -> User:
-    """creator / admin tier: a missing or expired token raises 401."""
+    """member / admin tier: a missing or expired token raises 401."""
     token = _extract_bearer(authorization)
     if not token:
         raise errors.unauthenticated()
@@ -77,4 +77,4 @@ def require_role(*roles: str):
 
 
 require_admin = require_role("admin")
-require_creator = require_role("creator", "admin")
+require_member = require_role("member", "admin")

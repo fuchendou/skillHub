@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Skill Hub — Review Command Center",
+  title: "Skill Hub Review Command Center",
   description: "Discover, submit, and review AI agent skills.",
 };
 

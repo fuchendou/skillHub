@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { useToast } from "@/components/Toaster";
-import { Button } from "@/components/ui";
+import { Button, Spinner } from "@/components/ui";
 import { ApiError } from "@/lib/api/client";
 import { listCategories } from "@/lib/api/catalog";
 import { createSkill } from "@/lib/api/skills";
@@ -18,10 +18,10 @@ const fieldCls =
   "w-full rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
 
 export default function SubmitPage() {
-  const { role } = useAuth();
+  const { ready, role } = useAuth();
   const toast = useToast();
   const router = useRouter();
-  const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories });
+  const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories, enabled: !!role });
 
   const {
     register,
@@ -30,16 +30,17 @@ export default function SubmitPage() {
     formState: { errors, isSubmitting },
   } = useForm<SkillFormValues>({ resolver: zodResolver(skillSubmitSchema) });
 
-  if (role === "visitor") {
+  if (!ready) return <Spinner label="Loading session..." />;
+
+  if (!role) {
     return (
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-zinc-100">Submit a skill</h2>
         <p className="text-sm text-zinc-400">
-          You need to be signed in as a creator. Use the “Creator” switch in the sidebar, or{" "}
+          Sign in before submitting a skill.{" "}
           <Link href="/login" className="text-sky-400 hover:underline">
-            sign in
+            Sign in
           </Link>
-          .
         </p>
       </div>
     );
@@ -58,13 +59,12 @@ export default function SubmitPage() {
         install_command: values.install_command,
         source_url: values.source_url,
         usage_note: values.usage_note || undefined,
-        tag: tags,
+        tags,
       });
-      toast("success", `“${skill.name}” submitted for review.`);
+      toast("success", `${skill.name} submitted for review.`);
       router.push("/my-skills");
     } catch (e) {
       if (e instanceof ApiError) {
-        // Map server-side field errors (api.md §6 details) back onto the form.
         if (e.details.length) {
           e.details.forEach((d) => d.field && setError(d.field as keyof SkillFormValues, { message: d.message }));
         } else if (e.code === "DUPLICATE_SKILL_NAME") {
@@ -87,8 +87,7 @@ export default function SubmitPage() {
       <header>
         <h2 className="text-2xl font-semibold text-zinc-100">Submit a skill</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Provide the metadata reviewers need. Your submission enters pending review and isn’t public
-          until an admin publishes it.
+          Provide the metadata reviewers need. Your submission enters pending review.
         </p>
       </header>
 
@@ -102,7 +101,7 @@ export default function SubmitPage() {
         <Field label="Category" error={errors.category_id?.message}>
           <select className={fieldCls} defaultValue="" {...register("category_id")}>
             <option value="" disabled>
-              Choose a category…
+              Choose a category
             </option>
             {(categories.data ?? []).map((c) => (
               <option key={c.id} value={c.id}>
@@ -117,16 +116,16 @@ export default function SubmitPage() {
         <Field label="Source / reference URL" error={errors.source_url?.message}>
           <input className={fieldCls} placeholder="github.com/owner/name" {...register("source_url")} />
         </Field>
-        <Field label="Tags" error={errors.tags?.message} hint="Comma-separated (optional)">
+        <Field label="Tags" error={errors.tags?.message} hint="Comma-separated">
           <input className={fieldCls} placeholder="database, sql" {...register("tags")} />
         </Field>
-        <Field label="Usage notes" error={errors.usage_note?.message} hint="Optional">
-          <textarea className={fieldCls} rows={4} placeholder="When and how to use it…" {...register("usage_note")} />
+        <Field label="Usage notes" error={errors.usage_note?.message}>
+          <textarea className={fieldCls} rows={4} placeholder="When and how to use it" {...register("usage_note")} />
         </Field>
 
         <div className="flex items-center gap-3 pt-2">
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting…" : "Submit for review"}
+            {isSubmitting ? "Submitting..." : "Submit for review"}
           </Button>
           <Link href="/my-skills" className="text-sm text-zinc-400 hover:text-zinc-200">
             Cancel

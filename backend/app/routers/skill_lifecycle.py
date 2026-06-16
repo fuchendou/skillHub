@@ -8,7 +8,7 @@ from app.core import errors
 from app.core.pagination import parse_page_params
 from app.core.responses import data_envelope, paged_envelope
 from app.db.session import get_session
-from app.deps.auth import require_admin, require_creator
+from app.deps.auth import require_admin, require_member
 from app.deps.idempotency import idempotency_key
 from app.models import User
 from app.repositories import skill_repository as skill_repo
@@ -78,7 +78,7 @@ async def unpublish(
 async def resubmit(
     skill_id: str,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_creator),
+    user: User = Depends(require_member),
     key: str | None = Depends(idempotency_key),
 ):
     skill = await review_service.resubmit(session, skill_id, user, idempotency_key=key)
@@ -89,7 +89,7 @@ async def resubmit(
 async def review_actions(
     skill_id: str,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_creator),
+    user: User = Depends(require_member),
     page: int = 1,
     limit: int = 20,
 ):

@@ -17,11 +17,6 @@ import {
 import type { Skill } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-/**
- * Admin lifecycle controls + owner resubmit. Buttons disable while a mutation is in flight
- * (first line of double-click defense); the API's idempotency makes a retry safe regardless.
- * After success the React Query cache is invalidated so every view reflects the new state.
- */
 export function SkillActions({ skill }: { skill: Skill }) {
   const { role, user } = useAuth();
   const toast = useToast();
@@ -46,52 +41,57 @@ export function SkillActions({ skill }: { skill: Skill }) {
 
   const isAdmin = role === "admin";
   const isOwner = user?.id === skill.owner.id;
-  const showAny =
-    (isAdmin && skill.status !== "draft") ||
-    (isOwner && (skill.status === "rejected" || skill.status === "draft"));
+  const canPublish = isAdmin && (skill.status === "pending" || skill.status === "unpublished");
+  const canReject = isAdmin && skill.status === "pending";
+  const canFeature = isAdmin && skill.status === "published" && !skill.is_featured;
+  const canUnfeature = isAdmin && skill.status === "published" && skill.is_featured;
+  const canUnpublish = isAdmin && skill.status === "published";
+  const canResubmit = isOwner && (skill.status === "rejected" || skill.status === "draft");
 
-  if (!showAny) return null;
+  if (!canPublish && !canReject && !canFeature && !canUnfeature && !canUnpublish && !canResubmit) {
+    return null;
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {isAdmin && skill.status !== "published" && (
+      {canPublish && (
         <Button variant="primary" disabled={busy} onClick={() => run(() => publishSkill(skill.id), "Skill published.")}>
           Publish
         </Button>
       )}
-      {isAdmin && (skill.status === "pending" || skill.status === "draft") && (
+      {canReject && (
         <Button variant="danger" disabled={busy} onClick={() => setShowReject((v) => !v)}>
-          Reject…
+          Reject
         </Button>
       )}
-      {isAdmin && skill.status === "published" && !skill.is_featured && (
+      {canFeature && (
         <Button disabled={busy} onClick={() => run(() => featureSkill(skill.id), "Marked as featured.")}>
           Feature
         </Button>
       )}
-      {isAdmin && skill.status === "published" && skill.is_featured && (
+      {canUnfeature && (
         <Button disabled={busy} onClick={() => run(() => unfeatureSkill(skill.id), "Removed featured mark.")}>
           Unfeature
         </Button>
       )}
-      {isAdmin && skill.status === "published" && (
+      {canUnpublish && (
         <Button disabled={busy} onClick={() => run(() => unpublishSkill(skill.id), "Skill unpublished.")}>
           Unpublish
         </Button>
       )}
-      {isOwner && (skill.status === "rejected" || skill.status === "draft") && (
+      {canResubmit && (
         <Button variant="primary" disabled={busy} onClick={() => run(() => resubmitSkill(skill.id), "Resubmitted for review.")}>
           Resubmit
         </Button>
       )}
 
-      {showReject && isAdmin && (
+      {showReject && canReject && (
         <div className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={2}
-            placeholder="Reason for rejection (required)…"
+            placeholder="Reason for rejection"
             className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-sky-500 focus:outline-none"
           />
           <div className="mt-2 flex gap-2">

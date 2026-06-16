@@ -22,6 +22,10 @@ export const tokenStore = {
     window.localStorage.setItem(REFRESH, bundle.refresh_token);
     window.localStorage.setItem(USER, JSON.stringify(bundle.user));
   },
+  setUser(user: AuthUser): void {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(USER, JSON.stringify(user));
+  },
   clear(): void {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(ACCESS);

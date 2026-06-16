@@ -2,23 +2,17 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-import { login as apiLogin } from "@/lib/api/auth";
+import { fetchMe, login as apiLogin } from "@/lib/api/auth";
 import type { AuthUser, Role } from "@/lib/api/types";
 import { tokenStore } from "@/lib/auth/store";
 
-// Seeded accounts (app/seed.py) — power the sidebar "demo as" role switcher (implement.md §5.3).
-export const DEMO_CREDENTIALS: Record<"creator" | "admin", { email: string; password: string }> = {
-  admin: { email: "admin@skillhub.example", password: "admin12345" },
-  creator: { email: "mina@example.com", password: "creator123" },
-};
-
 interface AuthState {
   user: AuthUser | null;
-  role: Role;
+  role: Role | null;
   ready: boolean;
   login: (email: string, password: string) => Promise<void>;
+  setSessionUser: (user: AuthUser) => void;
   logout: () => void;
-  demoAs: (role: Role) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -28,8 +22,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setUser(tokenStore.user());
-    setReady(true);
+    const cached = tokenStore.user();
+    setUser(cached);
+    if (!tokenStore.access()) {
+      setReady(true);
+      return;
+    }
+
+    fetchMe()
+      .then((fresh) => {
+        tokenStore.setUser(fresh);
+        setUser(fresh);
+      })
+      .catch(() => {
+        tokenStore.clear();
+        setUser(null);
+      })
+      .finally(() => setReady(true));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -38,27 +47,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(bundle.user);
   }, []);
 
+  const setSessionUser = useCallback((nextUser: AuthUser) => {
+    tokenStore.setUser(nextUser);
+    setUser(nextUser);
+  }, []);
+
   const logout = useCallback(() => {
     tokenStore.clear();
     setUser(null);
   }, []);
 
-  const demoAs = useCallback(
-    async (role: Role) => {
-      if (role === "visitor") {
-        logout();
-        return;
-      }
-      const creds = DEMO_CREDENTIALS[role];
-      await login(creds.email, creds.password);
-    },
-    [login, logout],
-  );
-
-  const role: Role = user?.role ?? "visitor";
+  const role = user?.role ?? null;
 
   return (
-    <AuthContext.Provider value={{ user, role, ready, login, logout, demoAs }}>
+    <AuthContext.Provider value={{ user, role, ready, login, setSessionUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

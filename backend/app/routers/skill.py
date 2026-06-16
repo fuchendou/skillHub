@@ -7,28 +7,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import parse_page_params
 from app.core.responses import data_envelope, paged_envelope
 from app.db.session import get_session
-from app.deps.auth import optional_user, require_creator
+from app.deps.auth import get_current_user, require_admin, require_member
 from app.deps.idempotency import idempotency_key
 from app.models import User
-from app.schemas.skill import SkillCreate, SkillOut, SkillUpdate
+from app.schemas.skill import DepartmentAssignmentRequest, SkillCreate, SkillOut, SkillUpdate
 from app.services import skill_service
 
 router = APIRouter(tags=["skill"])
 
 
-def _gate_status(status: str | None, owner: str | None, user: User | None) -> str | None:
+def _gate_status(status: str | None, owner: str | None, user: User) -> str | None:
     """Apply the api.md §9.2 status visibility gate before it reaches the query."""
-    if user is not None and user.role == "admin":
+    if user.role == "admin":
         return status  # admins may request any status (incl. None / "all")
-    if user is not None and owner == "me":
-        return status  # creators may filter their own submissions by status
-    return "published"  # visitors, and creators browsing the public catalog
+    if owner == "me":
+        return status  # members may filter their own submissions by status
+    return "published"  # members browsing the catalog
 
 
 @router.get("/skill")
 async def list_skills(
     session: AsyncSession = Depends(get_session),
-    user: User | None = Depends(optional_user),
+    user: User = Depends(get_current_user),
     page: int = 1,
     limit: int = 20,
     q: str | None = None,
@@ -59,7 +59,7 @@ async def list_skills(
 async def get_skill(
     id_or_slug: str,
     session: AsyncSession = Depends(get_session),
-    user: User | None = Depends(optional_user),
+    user: User = Depends(get_current_user),
 ):
     skill = await skill_service.get_skill_visible(session, id_or_slug, user)
     return data_envelope(SkillOut.model_validate(skill))
@@ -69,7 +69,7 @@ async def get_skill(
 async def create_skill(
     body: SkillCreate,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_creator),
+    user: User = Depends(require_member),
     key: str | None = Depends(idempotency_key),
 ):
     skill = await skill_service.create_skill(session, body, user, idempotency_key=key)
@@ -81,7 +81,7 @@ async def update_skill(
     skill_id: str,
     body: SkillUpdate,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_creator),
+    user: User = Depends(require_member),
 ):
     skill = await skill_service.update_skill(session, skill_id, body, user)
     return data_envelope(SkillOut.model_validate(skill))
@@ -91,7 +91,21 @@ async def update_skill(
 async def delete_skill(
     skill_id: str,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_creator),
+    user: User = Depends(require_member),
 ):
     await skill_service.delete_skill(session, skill_id, user)
     return Response(status_code=204)
+
+
+@router.put("/skill/{skill_id}/departments")
+async def assign_departments(
+    skill_id: str,
+    body: DepartmentAssignmentRequest,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(require_admin),
+    key: str | None = Depends(idempotency_key),
+):
+    skill = await skill_service.assign_departments(
+        session, skill_id, body.department_ids, user, idempotency_key=key
+    )
+    return data_envelope(SkillOut.model_validate(skill))

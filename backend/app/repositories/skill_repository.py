@@ -1,28 +1,29 @@
-"""Skill data access — visibility filtering, filtered listing, and dialect-aware search.
-
-Visibility (schema.md visibility rule / api.md §9.2) is applied here on **every** read, so a
-visitor passing ``?status=pending`` still receives only published rows.
-"""
+"""Skill data access: department visibility filtering, filtered listing, and search."""
 from __future__ import annotations
 
-from sqlalchemy import Select, func, nullslast, or_, select
+from sqlalchemy import Select, and_, func, nullslast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.pagination import PageParams
-from app.models import Category, Skill, SkillTag, Tag, User
+from app.models import Category, Department, Skill, SkillTag, Tag, User
 
 
 def is_postgres() -> bool:
     return settings.database_url.startswith("postgresql")
 
 
-def apply_visibility(stmt: Select, user: User | None) -> Select:
-    if user is None:  # visitor
-        return stmt.where(Skill.status == "published")
+def apply_visibility(stmt: Select, user: User) -> Select:
     if user.role == "admin":  # admin sees everything
         return stmt
-    return stmt.where(or_(Skill.status == "published", Skill.owner_id == user.id))  # creator
+    visible_published = and_(
+        Skill.status == "published",
+        or_(
+            ~Skill.departments.any(),
+            Skill.departments.any(Department.id == user.department_id),
+        ),
+    )
+    return stmt.where(or_(visible_published, Skill.owner_id == user.id))
 
 
 def _apply_search(stmt: Select, q: str) -> Select:
@@ -47,7 +48,7 @@ async def get_by_id_or_slug(session: AsyncSession, value: str) -> Skill | None:
 async def list_skills(
     session: AsyncSession,
     *,
-    user: User | None,
+    user: User,
     params: PageParams,
     q: str | None = None,
     category: str | None = None,
@@ -59,10 +60,9 @@ async def list_skills(
 ) -> tuple[list[Skill], int]:
     stmt = apply_visibility(select(Skill), user)
 
-    # status is visibility-gated: the visibility filter above already forces visitors to published.
     if status and status != "all":
         stmt = stmt.where(Skill.status == status)
-    if owner == "me" and user is not None:
+    if owner == "me":
         stmt = stmt.where(Skill.owner_id == user.id)
     if category:
         stmt = stmt.where(

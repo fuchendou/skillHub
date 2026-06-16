@@ -9,24 +9,25 @@ import { listSkills } from "@/lib/api/skills";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function MySkillsPage() {
-  const { role } = useAuth();
+  const { ready, role } = useAuth();
 
   const query = useQuery({
     queryKey: ["skills", "mine"],
     queryFn: () => listSkills({ owner: "me", status: "all", sort: "newest" }),
-    enabled: role !== "visitor",
+    enabled: !!role,
   });
 
-  if (role === "visitor") {
+  if (!ready) return <Spinner label="Loading session..." />;
+
+  if (!role) {
     return (
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-zinc-100">My submissions</h2>
         <p className="text-sm text-zinc-400">
-          Sign in as a creator (sidebar switch or{" "}
+          Sign in to see your submissions.{" "}
           <Link href="/login" className="text-sky-400 hover:underline">
-            login
+            Sign in
           </Link>
-          ) to see your submissions.
         </p>
       </div>
     );
@@ -37,13 +38,13 @@ export default function MySkillsPage() {
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-zinc-100">My submissions</h2>
-          <p className="mt-1 text-sm text-zinc-400">Every skill you’ve submitted, across all states.</p>
+          <p className="mt-1 text-sm text-zinc-400">Every skill you have submitted, across all states.</p>
         </div>
         <Link
           href="/submit"
           className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
         >
-          + Submit a skill
+          Submit a skill
         </Link>
       </header>
 

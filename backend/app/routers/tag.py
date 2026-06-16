@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import parse_page_params
 from app.core.responses import data_envelope, paged_envelope
 from app.db.session import get_session
-from app.deps.auth import require_admin
+from app.deps.auth import require_admin, require_member
 from app.schemas.tag import TagCreate, TagOut
 from app.services import tag_service
 
@@ -17,6 +17,7 @@ router = APIRouter(tags=["tag"])
 @router.get("/tag")
 async def list_tags(
     session: AsyncSession = Depends(get_session),
+    _=Depends(require_member),
     page: int = 1,
     limit: int = 20,
     q: str | None = None,
@@ -27,7 +28,11 @@ async def list_tags(
 
 
 @router.get("/tag/{id_or_slug}")
-async def get_tag(id_or_slug: str, session: AsyncSession = Depends(get_session)):
+async def get_tag(
+    id_or_slug: str,
+    session: AsyncSession = Depends(get_session),
+    _=Depends(require_member),
+):
     tag = await tag_service.get_tag(session, id_or_slug)
     return data_envelope(TagOut.model_validate(tag))
 

@@ -19,18 +19,23 @@ function externalHref(url: string): string {
 
 export default function SkillDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { role, user } = useAuth();
+  const { ready, role, user } = useAuth();
 
   const { data: skill, isPending, isError, error, refetch } = useQuery({
     queryKey: ["skill", slug],
     queryFn: () => getSkill(slug),
     retry: false,
+    enabled: !!role,
   });
 
+  if (!ready) return <Spinner label="Loading session..." />;
+  if (!role) {
+    return <ErrorState message="Sign in to view skill details." />;
+  }
   if (isPending) {
     return (
       <div className="py-16">
-        <Spinner label="Loading skill…" />
+        <Spinner label="Loading skill..." />
       </div>
     );
   }
@@ -40,34 +45,30 @@ export default function SkillDetailPage() {
     return (
       <div className="py-12">
         <ErrorState
-          message={notFound ? "This skill doesn’t exist or isn’t public." : "Failed to load this skill."}
+          message={notFound ? "This skill does not exist or is not visible to your department." : "Failed to load this skill."}
           onRetry={notFound ? undefined : () => refetch()}
         />
-        <div className="mt-4 text-center">
-          <Link href="/" className="text-sm text-sky-400 hover:underline">
-            ← Back to the catalog
-          </Link>
-        </div>
       </div>
     );
   }
 
   const canSeeLog = role === "admin" || user?.id === skill.owner.id;
+  const visibility = skill.departments.length ? skill.departments.map((d) => d.name).join(", ") : "Org-wide";
 
   return (
     <div className="space-y-6">
       <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
-        ← Catalog
+        Back to catalog
       </Link>
 
       <header className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            {skill.is_featured && <span title="Featured">⭐</span>}
+            {skill.is_featured && <span title="Featured">Featured</span>}
             <h2 className="text-2xl font-semibold text-zinc-100">{skill.name}</h2>
           </div>
           <p className="mt-1 text-sm text-zinc-400">
-            {skill.category.name} · by {skill.owner.display_name}
+            {skill.category.name} / {skill.owner.display_name} / {visibility}
           </p>
         </div>
         <StatusBadge status={skill.status} />
@@ -75,9 +76,9 @@ export default function SkillDetailPage() {
 
       <p className="text-zinc-300">{skill.summary}</p>
 
-      {skill.tag.length > 0 && (
+      {skill.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {skill.tag.map((t) => (
+          {skill.tags.map((t) => (
             <span key={t.id} className="rounded-md bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
               #{t.slug}
             </span>
@@ -86,7 +87,7 @@ export default function SkillDetailPage() {
       )}
 
       <section className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Install</h3>
+        <h3 className="text-xs font-semibold uppercase text-zinc-500">Install</h3>
         <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2">
           <code className="min-w-0 flex-1 truncate font-mono text-sm text-zinc-200">
             {skill.install_command}
@@ -99,20 +100,20 @@ export default function SkillDetailPage() {
           rel="noreferrer noopener"
           className="inline-block text-sm text-sky-400 hover:underline"
         >
-          Source / reference ↗
+          Source / reference
         </a>
       </section>
 
       {skill.usage_note && (
         <section className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Usage notes</h3>
+          <h3 className="text-xs font-semibold uppercase text-zinc-500">Usage notes</h3>
           <p className="whitespace-pre-wrap text-sm text-zinc-300">{skill.usage_note}</p>
         </section>
       )}
 
       {skill.status === "rejected" && skill.rejection_reason && (
         <section className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-rose-300">Rejection reason</h3>
+          <h3 className="text-xs font-semibold uppercase text-rose-300">Rejection reason</h3>
           <p className="mt-1 text-sm text-zinc-300">{skill.rejection_reason}</p>
         </section>
       )}
@@ -123,7 +124,7 @@ export default function SkillDetailPage() {
 
       {canSeeLog && (
         <section className="space-y-3 border-t border-zinc-800 pt-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Action history</h3>
+          <h3 className="text-xs font-semibold uppercase text-zinc-500">Action history</h3>
           <ReviewActionLog skillId={skill.id} />
         </section>
       )}

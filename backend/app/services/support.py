@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+from datetime import datetime, timedelta, timezone
 
 from slugify import slugify
 from sqlalchemy import select
@@ -37,6 +38,8 @@ def map_integrity_error(exc: IntegrityError) -> errors.AppError:
         return errors.duplicate("DUPLICATE_SKILL_NAME", "A skill with this name already exists.")
     if "skill_source_uniq" in msg:
         return errors.duplicate("DUPLICATE_SOURCE_URL", "A skill with this source link already exists.")
+    if "department" in msg:
+        return errors.validation_error([{"field": "department", "message": "Department already exists."}])
     if "email" in msg:
         return errors.duplicate("EMAIL_ALREADY_EXISTS", "This email is already registered.")
     return errors.AppError("CONFLICT", 409, "A uniqueness conflict occurred. Please retry.")
@@ -52,7 +55,7 @@ def record_action(
     to_status: object,
     reason: str | None = None,
 ) -> None:
-    """Append exactly one immutable ``review_action`` row (schema.md)."""
+    """Append exactly one immutable review_action row."""
     session.add(
         ReviewAction(
             skill_id=skill.id,
@@ -65,17 +68,45 @@ def record_action(
     )
 
 
-async def replay(session: AsyncSession, key: str | None) -> str | None:
-    """If this Idempotency-Key was already processed, return the affected skill id (api.md §4)."""
+async def replay(session: AsyncSession, key) -> str | None:
+    """Return the affected skill id for a same-user, same-fingerprint retry."""
     if not key:
         return None
-    row = await session.get(IdempotencyKey, key)
+    if isinstance(key, str):
+        row = await session.get(IdempotencyKey, key)
+    else:
+        row = (
+            await session.execute(
+                select(IdempotencyKey).where(IdempotencyKey.user_id == key.user_id, IdempotencyKey.key == key.key)
+            )
+        ).scalars().first()
     if row is None or row.skill_id is None:
         return None
+    if not isinstance(key, str) and row.request_fingerprint != key.request_fingerprint:
+        raise errors.idempotency_key_conflict()
     return row.skill_id
 
 
-async def remember(session: AsyncSession, key: str | None, actor_id: str | None, skill_id: str) -> None:
-    if not key:
+async def remember(session: AsyncSession, key, actor_id: str | None, skill_id: str) -> None:
+    if not key or isinstance(key, str):
         return
-    session.add(IdempotencyKey(key=key, actor_id=actor_id, skill_id=skill_id))
+    existing = (
+        await session.execute(
+            select(IdempotencyKey).where(IdempotencyKey.user_id == key.user_id, IdempotencyKey.key == key.key)
+        )
+    ).scalars().first()
+    if existing is not None:
+        if existing.request_fingerprint != key.request_fingerprint:
+            raise errors.idempotency_key_conflict()
+        return
+    session.add(
+        IdempotencyKey(
+            user_id=key.user_id,
+            key=key.key,
+            request_fingerprint=key.request_fingerprint,
+            response_status=200,
+            response_body=None,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            skill_id=skill_id,
+        )
+    )
