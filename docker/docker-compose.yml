@@ -19,11 +19,11 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build: ../backend
     environment:
       DATABASE_URL: postgresql+asyncpg://skill:skill@db:5432/skillhub
       JWT_SECRET: change-me-in-production-please-32-bytes
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
     command: sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       db:
@@ -32,7 +32,7 @@ services:
       - "8000:8000"
 
   frontend:
-    build: ./frontend
+    build: ../frontend
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
     depends_on:

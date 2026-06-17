@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # --- CORS ---
     # NoDecode prevents pydantic-settings from JSON-decoding the env var first, so the
     # validator below can accept a plain comma-separated string (or a JSON list).
-    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     @field_validator("cors_origins", mode="before")
     @classmethod
