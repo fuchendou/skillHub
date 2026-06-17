@@ -1,8 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { FolderOpen, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { CategoryTag, FeaturedBadge, visibilityLabel } from "@/components/SkillDisplay";
+import { SkillActions } from "@/components/SkillActions";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, Spinner } from "@/components/ui";
 import { listSkills } from "@/lib/api/skills";
@@ -21,11 +24,11 @@ export default function MySkillsPage() {
 
   if (!role) {
     return (
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-zinc-100">My submissions</h2>
-        <p className="text-sm text-zinc-400">
+      <div className="surface-flat p-6">
+        <h1 className="text-2xl font-black text-slate-900">My submissions</h1>
+        <p className="mt-1 text-sm text-slate-500">
           Sign in to see your submissions.{" "}
-          <Link href="/login" className="text-sky-400 hover:underline">
+          <Link href="/login" className="font-bold text-teal-700 hover:text-teal-900">
             Sign in
           </Link>
         </p>
@@ -34,17 +37,15 @@ export default function MySkillsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between">
+    <div>
+      <header className="page-head">
         <div>
-          <h2 className="text-2xl font-semibold text-zinc-100">My submissions</h2>
-          <p className="mt-1 text-sm text-zinc-400">Every skill you have submitted, across all states.</p>
+          <h1>My submissions</h1>
+          <p>Your drafts, pending reviews, rejected records, and published skills in one place.</p>
         </div>
-        <Link
-          href="/submit"
-          className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
-        >
-          Submit a skill
+        <Link href="/submit" className="btn primary">
+          <Plus className="icon" />
+          Submit
         </Link>
       </header>
 
@@ -62,22 +63,43 @@ export default function MySkillsPage() {
           onAction={() => (window.location.href = "/submit")}
         />
       ) : (
-        <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
+        <section className="surface list">
           {query.data.data.map((skill) => (
-            <li key={skill.id} className="flex items-center justify-between gap-4 px-4 py-3">
-              <div className="min-w-0">
-                <Link href={`/skill/${skill.slug}`} className="font-medium text-zinc-100 hover:text-sky-300">
-                  {skill.name}
-                </Link>
-                <p className="truncate text-xs text-zinc-500">{skill.summary}</p>
+            <article key={skill.id} className="list-row">
+              <div className="row-main">
+                <div className="badge-row">
+                  {skill.is_featured && <FeaturedBadge />}
+                  <StatusBadge status={skill.status} />
+                  <CategoryTag label={skill.category.name} />
+                </div>
+                <h3>{skill.name}</h3>
+                <p>{skill.summary}</p>
                 {skill.status === "rejected" && skill.rejection_reason && (
-                  <p className="mt-0.5 text-xs text-rose-400">Reason: {skill.rejection_reason}</p>
+                  <p className="mt-1 text-red-700">Reason: {skill.rejection_reason}</p>
                 )}
               </div>
-              <StatusBadge status={skill.status} />
-            </li>
+              <div className="stack tight">
+                <span className="mini">Owner</span>
+                <strong>{skill.owner.display_name}</strong>
+              </div>
+              <div className="stack tight">
+                <span className="mini">Scope</span>
+                <strong>{visibilityLabel(skill)}</strong>
+              </div>
+              <div className="stack tight scope-col">
+                <span className="mini">Updated</span>
+                <strong>{new Date(skill.updated_at).toLocaleDateString()}</strong>
+              </div>
+              <div className="actions">
+                <Link href={`/skill/${skill.slug}`} className="btn secondary small">
+                  <FolderOpen className="icon" />
+                  Open
+                </Link>
+                <SkillActions skill={skill} />
+              </div>
+            </article>
           ))}
-        </ul>
+        </section>
       )}
     </div>
   );

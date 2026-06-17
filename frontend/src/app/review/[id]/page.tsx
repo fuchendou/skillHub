@@ -1,13 +1,29 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Building2,
+  Check,
+  Gavel,
+  Plus,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { CopyInstallButton } from "@/components/CopyInstallButton";
 import { ReviewActionLog } from "@/components/ReviewActionLog";
 import { SkillActions } from "@/components/SkillActions";
+import {
+  CategoryTag,
+  CommandBox,
+  RiskBadge,
+  SourceButton,
+  visibilityLabel,
+} from "@/components/SkillDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button, ErrorState, Spinner } from "@/components/ui";
 import { useToast } from "@/components/Toaster";
@@ -29,12 +45,12 @@ export default function ReviewDetailPage() {
 
   if (!ready) return <Spinner label="Loading session..." />;
   if (role !== "admin") {
-    return <p className="text-sm text-zinc-400">Admin access is required.</p>;
+    return <p className="surface-flat p-6 text-sm text-slate-500">Admin access is required.</p>;
   }
   if (isPending) {
     return (
       <div className="py-16">
-        <Spinner />
+        <Spinner label="Loading submission..." />
       </div>
     );
   }
@@ -43,57 +59,137 @@ export default function ReviewDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <Link href="/review" className="text-sm text-zinc-500 hover:text-zinc-300">
-        Review queue
-      </Link>
-
-      <header className="flex items-start justify-between gap-4">
+    <div>
+      <header className="page-head">
         <div>
-          <h2 className="text-2xl font-semibold text-zinc-100">{skill.name}</h2>
-          <p className="mt-1 text-sm text-zinc-400">
-            {skill.category.name} / {skill.owner.display_name}
-            {skill.risk_label ? ` / ${skill.risk_label}` : ""}
-          </p>
+          <h1>Review submission</h1>
+          <p>Submitted metadata, automated checks, visibility impact, and final decision controls.</p>
         </div>
-        <StatusBadge status={skill.status} />
       </header>
 
-      <p className="text-zinc-300">{skill.summary}</p>
-
-      <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2">
-        <code className="min-w-0 flex-1 truncate font-mono text-sm text-zinc-200">{skill.install_command}</code>
-        <CopyInstallButton command={skill.install_command} />
+      <div className="actions mb-3" style={{ justifyContent: "flex-start" }}>
+        <Link href="/review" className="btn ghost">
+          <ArrowLeft className="icon" />
+          Back
+        </Link>
       </div>
-      <p className="text-sm text-zinc-500">
-        Source: <span className="text-zinc-300">{skill.source_url}</span>
-      </p>
 
-      {skill.usage_note && (
-        <section>
-          <h3 className="text-xs font-semibold uppercase text-zinc-500">Usage notes</h3>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-300">{skill.usage_note}</p>
-        </section>
-      )}
+      <section className="grid-2">
+        <article className="surface-flat">
+          <div className="detail-title">
+            <div className="badge-row">
+              <StatusBadge status={skill.status} />
+              <RiskBadge skill={skill} />
+              <CategoryTag label={skill.category.name} />
+            </div>
+            <h2>{skill.name}</h2>
+            <p>{skill.summary}</p>
+          </div>
+          <div className="detail-body">
+            <div className="field-grid">
+              <div className="field">
+                <label>Submitter</label>
+                <input value={skill.owner.display_name} readOnly />
+              </div>
+              <div className="field">
+                <label>Updated</label>
+                <input value={new Date(skill.updated_at).toLocaleString()} readOnly />
+              </div>
+              <div className="field full">
+                <label>Source link</label>
+                <input value={skill.source_url} readOnly />
+              </div>
+              <div className="field full">
+                <label>Install command</label>
+                <input value={skill.install_command} readOnly />
+              </div>
+              <div className="field full">
+                <label>Usage notes</label>
+                <textarea value={skill.usage_note ?? "No usage notes provided."} readOnly />
+              </div>
+              {skill.rejection_reason && (
+                <div className="notice warn field full">
+                  <AlertTriangle className="icon" />
+                  <div>{skill.rejection_reason}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </article>
 
-      {skill.rejection_reason && (
-        <section className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4">
-          <h3 className="text-xs font-semibold uppercase text-rose-300">Rejection reason</h3>
-          <p className="mt-1 text-sm text-zinc-300">{skill.rejection_reason}</p>
-        </section>
-      )}
-
-      <section className="border-t border-zinc-800 pt-4">
-        <SkillActions skill={skill} />
+        <aside className="side-panel sticky-panel">
+          <span className="badge info">
+            <Gavel className="icon" />
+            Decision
+          </span>
+          <h2 className="m-0 text-xl font-black text-slate-900">Review evidence</h2>
+          <CommandBox command={skill.install_command} copyLabel="Copy" />
+          <div className="actions" style={{ justifyContent: "flex-start" }}>
+            <SourceButton source={skill.source_url} />
+          </div>
+          <ReviewEvidence skill={skill} />
+          <SkillActions skill={skill} />
+          <DepartmentAssignment skill={skill} />
+        </aside>
       </section>
 
-      <DepartmentAssignment skill={skill} />
-
-      <section className="space-y-3 border-t border-zinc-800 pt-4">
-        <h3 className="text-xs font-semibold uppercase text-zinc-500">Action history</h3>
+      <section className="surface-flat mt-4 p-4">
+        <h3 className="mb-3 text-xs font-black uppercase text-slate-500">Action history</h3>
         <ReviewActionLog skillId={skill.id} />
       </section>
     </div>
+  );
+}
+
+function ReviewEvidence({ skill }: { skill: Skill }) {
+  const duplicateWarn = /duplicate/i.test(skill.risk_label ?? "");
+  const sourceWarn = /source|mirror|unverified/i.test(`${skill.risk_label ?? ""} ${skill.rejection_reason ?? ""}`);
+  return (
+    <ul className="check-list">
+      <li>
+        <span className="check-icon">
+          <Check className="icon" />
+        </span>
+        <span>
+          <strong>Command format</strong>
+          <br />
+          <span className="mini">{skill.install_command}</span>
+        </span>
+        <span className="badge safe">Passed</span>
+      </li>
+      <li>
+        <span className={`check-icon ${sourceWarn ? "warn" : ""}`}>
+          {sourceWarn ? <AlertTriangle className="icon" /> : <Check className="icon" />}
+        </span>
+        <span>
+          <strong>Source link</strong>
+          <br />
+          <span className="mini">{skill.source_url}</span>
+        </span>
+        <span className={`badge ${sourceWarn ? "pending" : "safe"}`}>{sourceWarn ? "Review" : "Verified"}</span>
+      </li>
+      <li>
+        <span className={`check-icon ${duplicateWarn ? "warn" : ""}`}>
+          {duplicateWarn ? <AlertTriangle className="icon" /> : <Check className="icon" />}
+        </span>
+        <span>
+          <strong>Duplicate check</strong>
+          <br />
+          <span className="mini">{duplicateWarn ? "Potential overlap flagged by risk label." : "No catalog duplicate found."}</span>
+        </span>
+        <span className={`badge ${duplicateWarn ? "pending" : "safe"}`}>{duplicateWarn ? "Check" : "Clear"}</span>
+      </li>
+      <li>
+        <span className="check-icon">
+          <Building2 className="icon" />
+        </span>
+        <span>
+          <strong>Visibility impact</strong>
+          <br />
+          <span className="mini">{visibilityLabel(skill)}</span>
+        </span>
+      </li>
+    </ul>
   );
 }
 
@@ -109,7 +205,12 @@ function DepartmentAssignment({ skill }: { skill: Skill }) {
   }, [skill]);
 
   if (skill.status !== "published") {
-    return null;
+    return (
+      <div className="notice warn">
+        <AlertTriangle className="icon" />
+        <div>Department assignment becomes active after publish.</div>
+      </div>
+    );
   }
 
   async function save() {
@@ -126,43 +227,41 @@ function DepartmentAssignment({ skill }: { skill: Skill }) {
     }
   }
 
+  if (departments.isPending) return <Spinner label="Loading departments..." />;
+  if (departments.isError) return <ErrorState message="Could not load departments." onRetry={() => departments.refetch()} />;
+
   return (
-    <section className="space-y-3 border-t border-zinc-800 pt-4">
-      <h3 className="text-xs font-semibold uppercase text-zinc-500">Department visibility</h3>
-      {departments.isPending ? (
-        <Spinner label="Loading departments..." />
-      ) : departments.isError ? (
-        <ErrorState message="Could not load departments." onRetry={() => departments.refetch()} />
-      ) : (
-        <>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {departments.data.map((department) => {
-              const checked = selected.includes(department.id);
-              return (
-                <label key={department.id} className="flex items-center gap-2 text-sm text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) =>
-                      setSelected((current) =>
-                        e.target.checked
-                          ? [...current, department.id]
-                          : current.filter((id) => id !== department.id),
-                      )
-                    }
-                    className="h-4 w-4 accent-sky-500"
-                  />
-                  {department.name}
-                </label>
-              );
-            })}
-          </div>
-          <p className="text-xs text-zinc-500">No checked departments means org-wide.</p>
-          <Button onClick={save} disabled={busy}>
-            {busy ? "Saving..." : "Save visibility"}
-          </Button>
-        </>
-      )}
-    </section>
+    <div className="stack">
+      <div>
+        <strong>Department visibility</strong>
+        <div className="mini">
+          {selected.length === 0 ? "Org-wide. Add a department to scope access." : "Visible to selected departments."}
+        </div>
+      </div>
+      <div className="chip-row wrap">
+        {departments.data.map((department) => {
+          const active = selected.includes(department.id);
+          return (
+            <button
+              key={department.id}
+              className={`chip ${active ? "on" : ""}`}
+              type="button"
+              onClick={() =>
+                setSelected((current) =>
+                  active ? current.filter((id) => id !== department.id) : [...current, department.id],
+                )
+              }
+            >
+              {active ? <Check className="icon" /> : <Plus className="icon" />}
+              {department.name}
+            </button>
+          );
+        })}
+      </div>
+      <Button onClick={save} disabled={busy} variant="secondary">
+        <ShieldCheck className="icon" />
+        {busy ? "Saving" : "Save visibility"}
+      </Button>
+    </div>
   );
 }

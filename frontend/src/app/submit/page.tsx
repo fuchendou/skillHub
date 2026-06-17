@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, Route, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -14,13 +15,11 @@ import { createSkill } from "@/lib/api/skills";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { skillSubmitSchema, type SkillFormValues } from "@/lib/validation/skill";
 
-const fieldCls =
-  "w-full rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
-
 export default function SubmitPage() {
   const { ready, role } = useAuth();
   const toast = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories, enabled: !!role });
 
   const {
@@ -34,11 +33,11 @@ export default function SubmitPage() {
 
   if (!role) {
     return (
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-zinc-100">Submit a skill</h2>
-        <p className="text-sm text-zinc-400">
+      <div className="surface-flat p-6">
+        <h1 className="text-2xl font-black text-slate-900">Submit a skill</h1>
+        <p className="mt-1 text-sm text-slate-500">
           Sign in before submitting a skill.{" "}
-          <Link href="/login" className="text-sky-400 hover:underline">
+          <Link href="/login" className="font-bold text-teal-700 hover:text-teal-900">
             Sign in
           </Link>
         </p>
@@ -61,6 +60,10 @@ export default function SubmitPage() {
         usage_note: values.usage_note || undefined,
         tags,
       });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["skills", "mine"] }),
+        queryClient.invalidateQueries({ queryKey: ["nav", "mine"] }),
+      ]);
       toast("success", `${skill.name} submitted for review.`);
       router.push("/my-skills");
     } catch (e) {
@@ -83,55 +86,100 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-zinc-100">Submit a skill</h2>
-        <p className="mt-1 text-sm text-zinc-400">
-          Provide the metadata reviewers need. Your submission enters pending review.
-        </p>
+    <div>
+      <header className="page-head">
+        <div>
+          <h1>Submit a skill</h1>
+          <p>Provide the metadata reviewers need before a skill can be published.</p>
+        </div>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <Field label="Name" error={errors.name?.message}>
-          <input className={fieldCls} placeholder="Schema Drift Watcher" {...register("name")} />
-        </Field>
-        <Field label="Short description" error={errors.summary?.message}>
-          <input className={fieldCls} placeholder="One sentence on what it does." {...register("summary")} />
-        </Field>
-        <Field label="Category" error={errors.category_id?.message}>
-          <select className={fieldCls} defaultValue="" {...register("category_id")}>
-            <option value="" disabled>
-              Choose a category
-            </option>
-            {(categories.data ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Install command" error={errors.install_command?.message} hint="e.g. codex skill install owner/name">
-          <input className={`${fieldCls} font-mono`} placeholder="codex skill install owner/name" {...register("install_command")} />
-        </Field>
-        <Field label="Source / reference URL" error={errors.source_url?.message}>
-          <input className={fieldCls} placeholder="github.com/owner/name" {...register("source_url")} />
-        </Field>
-        <Field label="Tags" error={errors.tags?.message} hint="Comma-separated">
-          <input className={fieldCls} placeholder="database, sql" {...register("tags")} />
-        </Field>
-        <Field label="Usage notes" error={errors.usage_note?.message}>
-          <textarea className={fieldCls} rows={4} placeholder="When and how to use it" {...register("usage_note")} />
-        </Field>
+      <section className="grid-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="surface-flat detail-body" noValidate>
+          <div className="field-grid">
+            <Field label="Name" error={errors.name?.message}>
+              <input placeholder="Schema Drift Watcher" {...register("name")} />
+            </Field>
+            <Field label="Category" error={errors.category_id?.message}>
+              <select defaultValue="" {...register("category_id")}>
+                <option value="" disabled>
+                  Choose a category
+                </option>
+                {(categories.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Short description" error={errors.summary?.message} full>
+              <input placeholder="One sentence on what it does." {...register("summary")} />
+            </Field>
+            <Field label="Install command" error={errors.install_command?.message} hint="e.g. codex skill install owner/name" full>
+              <input className="font-mono" placeholder="codex skill install owner/name" {...register("install_command")} />
+            </Field>
+            <Field label="Source / reference URL" error={errors.source_url?.message} full>
+              <input placeholder="github.com/owner/name" {...register("source_url")} />
+            </Field>
+            <Field label="Tags" error={errors.tags?.message} hint="Comma-separated" full>
+              <input placeholder="database, sql" {...register("tags")} />
+            </Field>
+            <Field label="Usage notes" error={errors.usage_note?.message} full>
+              <textarea placeholder="When and how to use it" {...register("usage_note")} />
+            </Field>
+          </div>
 
-        <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit for review"}
-          </Button>
-          <Link href="/my-skills" className="text-sm text-zinc-400 hover:text-zinc-200">
-            Cancel
-          </Link>
-        </div>
-      </form>
+          <div className="actions mt-5" style={{ justifyContent: "flex-start" }}>
+            <Button type="submit" variant="primary" disabled={isSubmitting}>
+              <Send className="icon" />
+              {isSubmitting ? "Submitting" : "Submit for review"}
+            </Button>
+            <Link href="/my-skills" className="btn ghost">
+              Cancel
+            </Link>
+          </div>
+        </form>
+
+        <aside className="side-panel">
+          <span className="badge info">
+            <Route className="icon" />
+            Review path
+          </span>
+          <h2 className="m-0 text-xl font-black text-slate-900">What happens next</h2>
+          <ul className="check-list">
+            <li>
+              <span className="check-icon">
+                <Send className="icon" />
+              </span>
+              <span>
+                <strong>Pending review</strong>
+                <br />
+                <span className="mini">Only you and admins can see the submitted record.</span>
+              </span>
+            </li>
+            <li>
+              <span className="check-icon">
+                <CheckCircle2 className="icon" />
+              </span>
+              <span>
+                <strong>Evidence check</strong>
+                <br />
+                <span className="mini">Reviewers inspect command format, source, duplicates, and visibility.</span>
+              </span>
+            </li>
+            <li>
+              <span className="check-icon">
+                <Route className="icon" />
+              </span>
+              <span>
+                <strong>Catalog scope</strong>
+                <br />
+                <span className="mini">Published skills can be org-wide or limited to departments.</span>
+              </span>
+            </li>
+          </ul>
+        </aside>
+      </section>
     </div>
   );
 }
@@ -140,19 +188,21 @@ function Field({
   label,
   error,
   hint,
+  full,
   children,
 }: {
   label: string;
   error?: string;
   hint?: string;
+  full?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium text-zinc-300">{label}</span>
+    <label className={`field ${full ? "full" : ""}`}>
+      <span>{label}</span>
       {children}
-      {hint && !error && <span className="block text-xs text-zinc-500">{hint}</span>}
-      {error && <span className="block text-xs text-rose-400">{error}</span>}
+      {hint && !error && <span className="hint">{hint}</span>}
+      {error && <span className="error-text">{error}</span>}
     </label>
   );
 }

@@ -1,24 +1,37 @@
-import clsx from "clsx";
+import { Archive, CheckCircle2, Clock3, FileEdit, XCircle } from "lucide-react";
 
 import type { SkillStatus } from "@/lib/api/types";
 
+const LABELS: Record<SkillStatus, string> = {
+  published: "Published",
+  pending: "Pending",
+  rejected: "Rejected",
+  draft: "Draft",
+  unpublished: "Unpublished",
+};
+
 const STYLES: Record<SkillStatus, string> = {
-  published: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-  pending: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  rejected: "border-rose-500/40 bg-rose-500/10 text-rose-300",
-  draft: "border-slate-500/40 bg-slate-500/10 text-slate-300",
-  unpublished: "border-zinc-500/40 bg-zinc-500/10 text-zinc-400",
+  published: "safe",
+  pending: "pending",
+  rejected: "blocked",
+  draft: "neutral",
+  unpublished: "neutral",
+};
+
+const ICONS = {
+  published: CheckCircle2,
+  pending: Clock3,
+  rejected: XCircle,
+  draft: FileEdit,
+  unpublished: Archive,
 };
 
 export function StatusBadge({ status }: { status: SkillStatus }) {
+  const Icon = ICONS[status];
   return (
-    <span
-      className={clsx(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
-        STYLES[status],
-      )}
-    >
-      {status}
+    <span className={`badge ${STYLES[status]}`}>
+      <Icon className="icon" />
+      {LABELS[status]}
     </span>
   );
 }

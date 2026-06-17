@@ -1,10 +1,19 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 import { useToast } from "@/components/Toaster";
 
-export function CopyInstallButton({ command }: { command: string }) {
+export function CopyInstallButton({
+  command,
+  label = "Copy install",
+  compact = false,
+}: {
+  command: string;
+  label?: string;
+  compact?: boolean;
+}) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -12,7 +21,7 @@ export function CopyInstallButton({ command }: { command: string }) {
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
-      toast("success", "Install command copied to clipboard.");
+      toast("success", "Install command copied.");
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast("error", "Could not access the clipboard.");
@@ -20,11 +29,9 @@ export function CopyInstallButton({ command }: { command: string }) {
   }
 
   return (
-    <button
-      onClick={copy}
-      className="shrink-0 rounded-md border border-zinc-600 px-3 py-1.5 text-xs font-medium text-zinc-100 hover:bg-zinc-800"
-    >
-      {copied ? "Copied" : "Copy"}
+    <button onClick={copy} className={`btn primary ${compact ? "small" : ""}`} type="button">
+      {copied ? <Check className="icon" /> : <Copy className="icon" />}
+      {copied ? "Copied" : label}
     </button>
   );
 }

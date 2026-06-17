@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { useState } from "react";
+import { Building2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { CatalogFilters, type FilterState } from "@/components/CatalogFilters";
-import { SkillCard } from "@/components/SkillCard";
+import { SkillRow } from "@/components/SkillDisplay";
 import { EmptyState, ErrorState, Spinner } from "@/components/ui";
 import { listCategories } from "@/lib/api/catalog";
 import { listSkills } from "@/lib/api/skills";
@@ -14,8 +15,13 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 const DEFAULT_FILTERS: FilterState = { q: "", category: "", sort: "newest", featured: false };
 
 export default function CatalogPage() {
+  const router = useRouter();
   const { ready, role, user } = useAuth();
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+
+  useEffect(() => {
+    if (ready && !role) router.replace("/login");
+  }, [ready, role, router]);
 
   const enabled = ready && !!role;
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories, enabled });
@@ -34,34 +40,32 @@ export default function CatalogPage() {
   const onChange = (patch: Partial<FilterState>) => setFilters((f) => ({ ...f, ...patch }));
   const reset = () => setFilters(DEFAULT_FILTERS);
 
-  if (!ready) {
-    return <Spinner label="Loading session..." />;
+  if (!ready || !role) {
+    return <Spinner label="Loading catalog..." />;
   }
 
-  if (!role) {
-    return (
-      <div className="mx-auto max-w-md space-y-4">
-        <h2 className="text-2xl font-semibold text-zinc-100">Skill Hub</h2>
-        <p className="text-sm text-zinc-400">Sign in to browse the internal skill catalog.</p>
-        <div className="flex gap-3">
-          <Link href="/login" className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white">
-            Sign in
-          </Link>
-          <Link href="/register" className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200">
-            Register
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const scope =
+    role === "admin"
+      ? "All departments"
+      : user?.department
+        ? `Visible to ${user.department.name} or org-wide`
+        : "Visible to your department or org-wide";
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-zinc-100">Catalog</h2>
-        <p className="mt-1 text-sm text-zinc-400">
-          {user?.department ? `Showing skills available to ${user.department.name}.` : "Showing the admin catalog."}
-        </p>
+    <div>
+      <header className="page-head">
+        <div>
+          <h1>{role === "admin" ? "Catalog preview" : "Skill catalog"}</h1>
+          <p>
+            {role === "admin"
+              ? "All published skills across departments, with current visibility and curation state."
+              : "Published skills available to your department, with source and install details ready to inspect."}
+          </p>
+        </div>
+        <div className="scope-pill">
+          <Building2 className="icon" />
+          {role === "admin" ? "All departments" : `${user?.department?.name ?? "Member"} catalog`}
+        </div>
       </header>
 
       <CatalogFilters
@@ -79,19 +83,24 @@ export default function CatalogPage() {
         <ErrorState message="The catalog could not be loaded." onRetry={() => skills.refetch()} />
       ) : skills.data.data.length === 0 ? (
         <EmptyState
-          title="No skills match your filters"
-          hint="Try a different keyword or category, or clear the filters."
+          title="No skills match"
+          hint="Try a different search or category."
           actionLabel="Reset filters"
           onAction={reset}
         />
       ) : (
         <>
-          <p className="text-xs text-zinc-500">{skills.data.pagination.total} skill(s)</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {skills.data.data.map((skill) => (
-              <SkillCard key={skill.id} skill={skill} />
-            ))}
+          <div className="result-meta">
+            <span>
+              {skills.data.data.length} of {skills.data.pagination.total} published skills
+            </span>
+            <span>{scope}</span>
           </div>
+          <section className="surface list">
+            {skills.data.data.map((skill) => (
+              <SkillRow key={skill.id} skill={skill} href={`/skill/${skill.slug}`} />
+            ))}
+          </section>
         </>
       )}
     </div>

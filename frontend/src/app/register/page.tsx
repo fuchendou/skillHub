@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldCheck, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,9 +12,6 @@ import { registerMember } from "@/lib/api/auth";
 import { listDepartments } from "@/lib/api/catalog";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
-
-const fieldCls =
-  "w-full rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -39,69 +37,91 @@ export default function RegisterPage() {
     }
   }
 
-  if (departments.isPending) {
-    return <Spinner label="Loading departments..." />;
-  }
-  if (departments.isError) {
-    return <ErrorState message="Could not load departments." onRetry={() => departments.refetch()} />;
-  }
-
   return (
-    <div className="mx-auto max-w-sm space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-zinc-100">Register</h2>
-        <p className="mt-1 text-sm text-zinc-400">Create a member account.</p>
-      </header>
+    <main className="auth-screen">
+      <section className="auth-card">
+        <div className="brand text-slate-900">
+          <span className="brand-mark">
+            <ShieldCheck className="icon" />
+          </span>
+          <span>Skill Hub</span>
+        </div>
+        <h1>Create an account</h1>
+        <p>New accounts are members scoped to one department.</p>
 
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          className={fieldCls}
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-          autoComplete="username"
-          required
-        />
-        <input
-          className={fieldCls}
-          placeholder="Display name"
-          value={form.display_name}
-          onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-          required
-        />
-        <input
-          className={fieldCls}
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-          autoComplete="new-password"
-          required
-        />
-        <select
-          className={fieldCls}
-          value={form.department_id}
-          onChange={(e) => setForm((f) => ({ ...f, department_id: e.target.value }))}
-          required
-        >
-          <option value="" disabled>
-            Department
-          </option>
-          {departments.data.map((department) => (
-            <option key={department.id} value={department.id}>
-              {department.name}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="primary" disabled={busy} className="w-full">
-          {busy ? "Creating account..." : "Create account"}
-        </Button>
-      </form>
+        {departments.isPending ? (
+          <div className="mt-6">
+            <Spinner label="Loading departments..." />
+          </div>
+        ) : departments.isError ? (
+          <div className="mt-6">
+            <ErrorState message="Could not load departments." onRetry={() => departments.refetch()} />
+          </div>
+        ) : (
+          <form onSubmit={submit} className="mt-7 grid gap-5">
+            <label className="field">
+              <span className="form-label">Email</span>
+              <input
+                className="field-control"
+                type="email"
+                placeholder="you@company.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                autoComplete="username"
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="form-label">Display name</span>
+              <input
+                className="field-control"
+                placeholder="Mina Torres"
+                value={form.display_name}
+                onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="form-label">Password</span>
+              <input
+                className="field-control"
+                type="password"
+                placeholder="At least 8 characters"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="form-label">Department</span>
+              <select
+                className="field-control"
+                value={form.department_id}
+                onChange={(e) => setForm((f) => ({ ...f, department_id: e.target.value }))}
+                required
+              >
+                <option value="" disabled>
+                  Choose a department
+                </option>
+                {departments.data.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button type="submit" variant="primary" disabled={busy} className="mt-5 w-full">
+              <UserPlus className="icon" />
+              {busy ? "Creating account" : "Create account"}
+            </Button>
+          </form>
+        )}
 
-      <Link href="/login" className="block text-center text-sm text-zinc-500 hover:text-zinc-300">
-        Sign in instead
-      </Link>
-    </div>
+        <Link href="/login" className="mt-5 block text-center text-sm font-bold text-teal-700 hover:text-teal-900">
+          Back to sign in
+        </Link>
+      </section>
+    </main>
   );
 }

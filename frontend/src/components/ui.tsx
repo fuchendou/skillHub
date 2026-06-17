@@ -1,11 +1,12 @@
 "use client";
 
 import clsx from "clsx";
+import { AlertCircle, Loader2, SearchX } from "lucide-react";
 
 export function Spinner({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-sm text-zinc-400" role="status">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-200" />
+    <div className="flex items-center gap-3 text-sm text-slate-500" role="status">
+      <Loader2 className="icon animate-spin text-teal-700" />
       {label ?? "Loading..."}
     </div>
   );
@@ -23,14 +24,12 @@ export function EmptyState({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-zinc-700 px-6 py-16 text-center">
-      <p className="text-sm font-medium text-zinc-300">{title}</p>
-      {hint && <p className="max-w-sm text-sm text-zinc-500">{hint}</p>}
+    <div className="surface-flat flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+      <SearchX className="h-8 w-8 text-slate-400" />
+      <p className="text-sm font-bold text-slate-800">{title}</p>
+      {hint && <p className="max-w-sm text-sm text-slate-500">{hint}</p>}
       {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="mt-1 rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800"
-        >
+        <button onClick={onAction} className="btn secondary mt-1">
           {actionLabel}
         </button>
       )}
@@ -40,14 +39,12 @@ export function EmptyState({
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-rose-500/30 bg-rose-500/5 px-6 py-16 text-center">
-      <p className="text-sm font-medium text-rose-300">Something went wrong</p>
-      <p className="max-w-sm text-sm text-zinc-400">{message}</p>
+    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50 px-6 py-16 text-center">
+      <AlertCircle className="h-8 w-8 text-red-700" />
+      <p className="text-sm font-bold text-red-800">Something went wrong</p>
+      <p className="max-w-sm text-sm text-red-700">{message}</p>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          className="mt-1 rounded-md border border-rose-500/40 px-3 py-1.5 text-sm text-rose-200 hover:bg-rose-500/10"
-        >
+        <button onClick={onRetry} className="btn danger mt-1">
           Retry
         </button>
       )}
@@ -57,20 +54,24 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 export function Button({
   variant = "default",
+  size = "default",
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "primary" | "danger" | "ghost";
+  variant?: "default" | "primary" | "danger" | "ghost" | "secondary" | "rail";
+  size?: "default" | "small";
 }) {
   return (
     <button
       {...props}
       className={clsx(
-        "inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "default" && "border border-zinc-600 text-zinc-100 hover:bg-zinc-800",
-        variant === "primary" && "bg-sky-600 text-white hover:bg-sky-500",
-        variant === "danger" && "border border-rose-500/50 text-rose-200 hover:bg-rose-500/10",
-        variant === "ghost" && "text-zinc-300 hover:bg-zinc-800",
+        "btn",
+        size === "small" && "small",
+        variant === "primary" && "primary",
+        variant === "danger" && "danger",
+        variant === "ghost" && "ghost",
+        variant === "secondary" && "secondary",
+        variant === "rail" && "rail",
         className,
       )}
     />

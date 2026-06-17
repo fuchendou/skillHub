@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { useToast } from "@/components/Toaster";
@@ -8,9 +9,6 @@ import { Button, EmptyState, ErrorState, Spinner } from "@/components/ui";
 import { createDepartment, deleteDepartment } from "@/lib/api/admin";
 import { listDepartments } from "@/lib/api/catalog";
 import { useAuth } from "@/lib/auth/AuthProvider";
-
-const fieldCls =
-  "rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
 
 export default function DepartmentsPage() {
   const { ready, role } = useAuth();
@@ -22,7 +20,7 @@ export default function DepartmentsPage() {
   const departments = useQuery({ queryKey: ["departments"], queryFn: listDepartments, enabled: role === "admin" });
 
   if (!ready) return <Spinner label="Loading session..." />;
-  if (role !== "admin") return <p className="text-sm text-zinc-400">Admin access is required.</p>;
+  if (role !== "admin") return <p className="surface-flat p-6 text-sm text-slate-500">Admin access is required.</p>;
 
   async function addDepartment(e: React.FormEvent) {
     e.preventDefault();
@@ -54,22 +52,31 @@ export default function DepartmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-zinc-100">Departments</h2>
-        <p className="mt-1 text-sm text-zinc-400">Manage department names used for member catalog visibility.</p>
+    <div>
+      <header className="page-head">
+        <div>
+          <h1>Department visibility</h1>
+          <p>See and manage the departments used to scope published skill access.</p>
+        </div>
+        <div className="scope-pill">
+          <Building2 className="icon" />
+          {departments.data?.length ?? 0} departments
+        </div>
       </header>
 
-      <form onSubmit={addDepartment} className="flex gap-2">
-        <input
-          className={`${fieldCls} min-w-0 flex-1`}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Department name"
-        />
-        <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
-          Add
-        </Button>
+      <form onSubmit={addDepartment} className="surface toolbar mb-4">
+        <div className="search-row">
+          <input
+            className="field-control"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Department name"
+          />
+          <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
+            <Plus className="icon" />
+            Add
+          </Button>
+        </div>
       </form>
 
       {departments.isPending ? (
@@ -79,19 +86,32 @@ export default function DepartmentsPage() {
       ) : departments.data.length === 0 ? (
         <EmptyState title="No departments yet" />
       ) : (
-        <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
+        <section className="surface list">
           {departments.data.map((department) => (
-            <li key={department.id} className="flex items-center justify-between gap-4 px-4 py-3">
-              <div>
-                <p className="font-medium text-zinc-100">{department.name}</p>
-                <p className="text-xs text-zinc-500">{department.slug}</p>
+            <article key={department.id} className="list-row admin-row">
+              <div className="row-main">
+                <div className="badge-row">
+                  <span className="badge info">
+                    <Building2 className="icon" />
+                    Department
+                  </span>
+                </div>
+                <h3>{department.name}</h3>
+                <p>{department.slug}</p>
               </div>
-              <Button variant="danger" disabled={busy} onClick={() => removeDepartment(department.id)}>
-                Delete
-              </Button>
-            </li>
+              <div className="stack tight">
+                <span className="mini">Catalog scope</span>
+                <strong>Available for assignment</strong>
+              </div>
+              <div className="actions">
+                <Button variant="danger" disabled={busy} onClick={() => removeDepartment(department.id)}>
+                  <Trash2 className="icon" />
+                  Delete
+                </Button>
+              </div>
+            </article>
           ))}
-        </ul>
+        </section>
       )}
     </div>
   );

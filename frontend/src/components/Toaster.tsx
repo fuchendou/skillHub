@@ -1,7 +1,7 @@
 "use client";
 
+import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { createContext, useCallback, useContext, useState } from "react";
-import clsx from "clsx";
 
 type ToastKind = "success" | "error" | "info";
 interface Toast {
@@ -12,8 +12,18 @@ interface Toast {
 
 const ToastContext = createContext<((kind: ToastKind, text: string) => void) | null>(null);
 
+const ICONS = {
+  success: CheckCircle2,
+  error: XCircle,
+  info: Info,
+};
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const remove = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const toast = useCallback((kind: ToastKind, text: string) => {
     const id = Date.now() + Math.random();
@@ -24,21 +34,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            role="status"
-            className={clsx(
-              "rounded-md border px-4 py-3 text-sm shadow-lg backdrop-blur",
-              t.kind === "success" && "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
-              t.kind === "error" && "border-rose-500/40 bg-rose-500/15 text-rose-200",
-              t.kind === "info" && "border-sky-500/40 bg-sky-500/15 text-sky-200",
-            )}
-          >
-            {t.text}
-          </div>
-        ))}
+      <div className="toast-wrap">
+        {toasts.map((t) => {
+          const Icon = ICONS[t.kind];
+          return (
+            <div key={t.id} role="status" className={`toast ${t.kind}`}>
+              <Icon className="icon" />
+              <span className="min-w-0 flex-1">{t.text}</span>
+              <button
+                type="button"
+                aria-label="Dismiss notification"
+                onClick={() => remove(t.id)}
+                className="grid h-6 w-6 place-items-center rounded-md text-white/80 hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

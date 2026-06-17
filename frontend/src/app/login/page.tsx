@@ -1,5 +1,6 @@
 "use client";
 
+import { LogIn, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,9 +9,6 @@ import { useToast } from "@/components/Toaster";
 import { Button } from "@/components/ui";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
-
-const fieldCls =
-  "w-full rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -36,39 +34,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold text-zinc-100">Sign in</h2>
-        <p className="mt-1 text-sm text-zinc-400">Use your Skill Hub account.</p>
-      </header>
+    <main className="auth-screen">
+      <section className="auth-card">
+        <div className="brand text-slate-900">
+          <span className="brand-mark">
+            <ShieldCheck className="icon" />
+          </span>
+          <span>Skill Hub</span>
+        </div>
+        <h1>Sign in to Skill Hub</h1>
+        <p>Access the internal catalog, submissions, and review workspace.</p>
 
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          className={fieldCls}
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="username"
-          required
-        />
-        <input
-          className={fieldCls}
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
-        <Button type="submit" variant="primary" disabled={busy} className="w-full">
-          {busy ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
+        <form onSubmit={submit} className="mt-7 grid gap-5">
+          <label className="field">
+            <span className="form-label">Email</span>
+            <input
+              className="field-control"
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label className="field">
+            <span className="form-label">Password</span>
+            <input
+              className="field-control"
+              type="password"
+              placeholder="Your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          <Button type="submit" variant="primary" disabled={busy} className="mt-5 w-full">
+            <LogIn className="icon" />
+            {busy ? "Signing in" : "Sign in"}
+          </Button>
+        </form>
 
-      <Link href="/register" className="block text-center text-sm text-zinc-500 hover:text-zinc-300">
-        Create a member account
-      </Link>
-    </div>
+        <Link href="/register" className="mt-5 block text-center text-sm font-bold text-teal-700 hover:text-teal-900">
+          Create an account
+        </Link>
+      </section>
+    </main>
   );
 }

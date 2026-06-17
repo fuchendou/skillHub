@@ -1,5 +1,7 @@
 "use client";
 
+import { Search, Star, X } from "lucide-react";
+
 import type { Category } from "@/lib/api/types";
 
 export interface FilterState {
@@ -8,9 +10,6 @@ export interface FilterState {
   sort: "newest" | "name" | "featured";
   featured: boolean;
 }
-
-const inputCls =
-  "rounded-md border border-zinc-700 bg-zinc-950/60 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-sky-500 focus:outline-none";
 
 export function CatalogFilters({
   state,
@@ -23,50 +22,61 @@ export function CatalogFilters({
   onChange: (patch: Partial<FilterState>) => void;
   onReset: () => void;
 }) {
+  const hasFilters = state.q || state.category || state.featured || state.sort !== "newest";
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <input
-        value={state.q}
-        onChange={(e) => onChange({ q: e.target.value })}
-        placeholder="Search skills..."
-        className={`${inputCls} min-w-[200px] flex-1`}
-        aria-label="Search skills"
-      />
-      <select
-        value={state.category}
-        onChange={(e) => onChange({ category: e.target.value })}
-        className={inputCls}
-        aria-label="Filter by category"
-      >
-        <option value="">All categories</option>
-        {categories.map((c) => (
-          <option key={c.id} value={c.slug}>
-            {c.name}
-          </option>
+    <section className="surface toolbar">
+      <div className="search-row">
+        <label className="search-box">
+          <Search className="icon" />
+          <span className="sr-only">Search skills</span>
+          <input
+            value={state.q}
+            onChange={(e) => onChange({ q: e.target.value })}
+            placeholder="Search by skill, tag, owner, or category"
+            type="search"
+          />
+        </label>
+        <select
+          value={state.sort}
+          onChange={(e) => onChange({ sort: e.target.value as FilterState["sort"] })}
+          aria-label="Sort"
+        >
+          <option value="newest">Newest</option>
+          <option value="name">Name A-Z</option>
+          <option value="featured">Featured first</option>
+        </select>
+      </div>
+
+      <div className="chip-row">
+        <button className={`chip ${state.category === "" ? "active" : ""}`} type="button" onClick={() => onChange({ category: "" })}>
+          All
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            className={`chip ${state.category === category.slug ? "active" : ""}`}
+            type="button"
+            onClick={() => onChange({ category: category.slug })}
+          >
+            {category.name}
+          </button>
         ))}
-      </select>
-      <select
-        value={state.sort}
-        onChange={(e) => onChange({ sort: e.target.value as FilterState["sort"] })}
-        className={inputCls}
-        aria-label="Sort"
-      >
-        <option value="newest">Newest</option>
-        <option value="name">Name</option>
-        <option value="featured">Featured first</option>
-      </select>
-      <label className="flex items-center gap-2 text-sm text-zinc-300">
-        <input
-          type="checkbox"
-          checked={state.featured}
-          onChange={(e) => onChange({ featured: e.target.checked })}
-          className="h-4 w-4 accent-sky-500"
-        />
-        Featured only
-      </label>
-      <button onClick={onReset} className="text-sm text-zinc-400 underline-offset-2 hover:underline">
-        Reset
-      </button>
-    </div>
+        <button
+          className={`chip ${state.featured ? "on" : ""}`}
+          type="button"
+          onClick={() => onChange({ featured: !state.featured })}
+        >
+          <Star className="icon" />
+          Featured
+        </button>
+        {hasFilters && (
+          <button className="chip" type="button" onClick={onReset}>
+            <X className="icon" />
+            Reset
+          </button>
+        )}
+      </div>
+    </section>
   );
 }

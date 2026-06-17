@@ -1,5 +1,6 @@
 "use client";
 
+import { Archive, Check, RotateCcw, Star, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -53,48 +54,58 @@ export function SkillActions({ skill }: { skill: Skill }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {canPublish && (
-        <Button variant="primary" disabled={busy} onClick={() => run(() => publishSkill(skill.id), "Skill published.")}>
-          Publish
-        </Button>
-      )}
-      {canReject && (
-        <Button variant="danger" disabled={busy} onClick={() => setShowReject((v) => !v)}>
-          Reject
-        </Button>
-      )}
-      {canFeature && (
-        <Button disabled={busy} onClick={() => run(() => featureSkill(skill.id), "Marked as featured.")}>
-          Feature
-        </Button>
-      )}
-      {canUnfeature && (
-        <Button disabled={busy} onClick={() => run(() => unfeatureSkill(skill.id), "Removed featured mark.")}>
-          Unfeature
-        </Button>
-      )}
-      {canUnpublish && (
-        <Button disabled={busy} onClick={() => run(() => unpublishSkill(skill.id), "Skill unpublished.")}>
-          Unpublish
-        </Button>
-      )}
-      {canResubmit && (
-        <Button variant="primary" disabled={busy} onClick={() => run(() => resubmitSkill(skill.id), "Resubmitted for review.")}>
-          Resubmit
-        </Button>
-      )}
+    <div className="grid gap-3">
+      <div className="actions" style={{ justifyContent: "flex-start" }}>
+        {canPublish && (
+          <Button variant="primary" disabled={busy} onClick={() => run(() => publishSkill(skill.id), "Skill published.")}>
+            <Check className="icon" />
+            {skill.status === "unpublished" ? "Restore" : "Publish"}
+          </Button>
+        )}
+        {canReject && (
+          <Button variant="danger" disabled={busy} onClick={() => setShowReject((v) => !v)}>
+            <X className="icon" />
+            Reject
+          </Button>
+        )}
+        {canFeature && (
+          <Button disabled={busy} onClick={() => run(() => featureSkill(skill.id), "Marked as featured.")}>
+            <Star className="icon" />
+            Feature
+          </Button>
+        )}
+        {canUnfeature && (
+          <Button disabled={busy} onClick={() => run(() => unfeatureSkill(skill.id), "Removed featured mark.")}>
+            <Star className="icon" />
+            Unfeature
+          </Button>
+        )}
+        {canUnpublish && (
+          <Button variant="danger" disabled={busy} onClick={() => run(() => unpublishSkill(skill.id), "Skill unpublished.")}>
+            <Archive className="icon" />
+            Unpublish
+          </Button>
+        )}
+        {canResubmit && (
+          <Button variant="primary" disabled={busy} onClick={() => run(() => resubmitSkill(skill.id), "Resubmitted for review.")}>
+            <RotateCcw className="icon" />
+            Resubmit
+          </Button>
+        )}
+      </div>
 
       {showReject && canReject && (
-        <div className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={2}
-            placeholder="Reason for rejection"
-            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-sky-500 focus:outline-none"
-          />
-          <div className="mt-2 flex gap-2">
+        <div className="surface-flat grid gap-3 p-3">
+          <label className="field">
+            <span className="form-label">Rejection reason</span>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              placeholder="Tell the submitter what to fix before resubmission."
+            />
+          </label>
+          <div className="actions" style={{ justifyContent: "flex-start" }}>
             <Button
               variant="danger"
               disabled={busy || !reason.trim()}
@@ -104,6 +115,7 @@ export function SkillActions({ skill }: { skill: Skill }) {
                 setReason("");
               }}
             >
+              <X className="icon" />
               Confirm reject
             </Button>
             <Button
